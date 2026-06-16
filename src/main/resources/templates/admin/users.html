@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head(#{page.users})}"></head>
+<body>
+<header th:replace="~{fragments/common :: topbar}"></header>
+<div class="container">
+    <h1 th:text="#{users.heading}">Пользователи</h1>
+    <div th:replace="~{fragments/common :: flash}"></div>
+
+    <div class="card">
+        <h3 th:text="#{users.new}">Новый пользователь</h3>
+        <form th:action="@{/admin/users}" method="post" enctype="multipart/form-data">
+            <div class="row">
+                <div><label th:text="#{users.login}">Логин</label><input type="text" name="username" required></div>
+                <div><label th:text="#{users.password}">Пароль</label><input type="text" name="password" required></div>
+            </div>
+            <div class="row">
+                <div><label th:text="#{users.lastName}">Фамилия</label><input type="text" name="lastName" required></div>
+                <div><label th:text="#{users.firstName}">Имя</label><input type="text" name="firstName" required></div>
+            </div>
+            <div class="row">
+                <div>
+                    <label th:text="#{users.role}">Роль</label>
+                    <select name="role">
+                        <option th:each="r : ${roles}" th:value="${r}" th:text="#{'role.' + ${r.name()}}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label th:text="#{users.group}">Группа (для студента)</label>
+                    <select name="schoolClassId">
+                        <option value="" th:text="#{common.none}">— нет —</option>
+                        <option th:each="c : ${classes}" th:value="${c.id}" th:text="${c.name}"></option>
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div><label th:text="#{users.studentNumber}">Номер студента</label>
+                    <input type="text" name="studentNumber" inputmode="numeric" pattern="\d{6}" maxlength="6"
+                           placeholder="123456"></div>
+                <div><label th:text="#{users.photo}">Фото</label><input type="file" name="photo" accept="image/*"></div>
+            </div>
+            <button class="btn" type="submit" th:text="#{action.create}">Создать</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <table>
+            <thead><tr>
+                <th th:text="#{users.colPhoto}">Фото</th>
+                <th th:text="#{users.colFullName}">ФИО</th>
+                <th th:text="#{users.colLogin}">Логин</th>
+                <th th:text="#{users.colRole}">Роль</th>
+                <th th:text="#{users.colStudentNumber}">Номер</th>
+                <th th:text="#{users.colGroup}">Группа</th>
+                <th th:text="#{common.actions}">Действия</th>
+            </tr></thead>
+            <tbody>
+                <tr th:each="u : ${users}">
+                    <td>
+                        <img th:if="${u.photoName != null}" class="avatar-sm" th:src="@{/users/{id}/photo(id=${u.id})}" alt="">
+                        <span th:if="${u.photoName == null}" class="avatar-ph"></span>
+                    </td>
+                    <td th:text="${u.fullName}"></td>
+                    <td class="creds" th:text="${u.username}"></td>
+                    <td th:text="#{'role.' + ${u.role.name()}}"></td>
+                    <td class="creds" th:text="${u.studentNumber != null ? u.studentNumber : '—'}"></td>
+                    <td th:text="${u.schoolClass != null ? u.schoolClass.name : '—'}"></td>
+                    <td>
+                        <div class="actions">
+                            <a class="btn tiny secondary" th:href="@{/admin/users/{id}/edit(id=${u.id})}" th:text="#{action.edit}">Редактировать</a>
+                            <form th:action="@{/admin/users/{id}/delete(id=${u.id})}" method="post"
+                                  th:attr="data-msg=#{common.confirmDelete}" onsubmit="return confirm(this.dataset.msg)">
+                                <button class="btn tiny secondary" type="submit" th:text="#{action.delete}">Удалить</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

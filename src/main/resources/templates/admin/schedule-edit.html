@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head(#{schedule.edit})}"></head>
+<body>
+<header th:replace="~{fragments/common :: topbar}"></header>
+<div class="container">
+    <a class="btn tiny secondary" th:href="@{/admin/schedule}" th:text="#{common.back}">← Назад</a>
+    <h1 th:text="#{schedule.edit}">Редактирование слота</h1>
+    <div th:replace="~{fragments/common :: flash}"></div>
+
+    <div class="card">
+        <form th:action="@{/admin/schedule/{id}(id=${editTemplate.id})}" method="post">
+            <div class="row">
+                <label><span th:text="#{schedule.group}">Группа</span>
+                    <select name="schoolClassId" required>
+                        <option th:each="c : ${classes}" th:value="${c.id}" th:text="${c.name}"
+                                th:selected="${c.id == editTemplate.schoolClass.id}"></option>
+                    </select>
+                </label>
+                <label><span th:text="#{schedule.subject}">Предмет</span>
+                    <select name="subjectId" required>
+                        <option th:each="s : ${subjects}" th:value="${s.id}" th:text="${s.name}"
+                                th:selected="${s.id == editTemplate.subject.id}"></option>
+                    </select>
+                </label>
+                <label><span th:text="#{schedule.teacher}">Преподаватель</span>
+                    <select name="teacherId" required>
+                        <option th:each="t : ${teachers}" th:value="${t.id}" th:text="${t.fullName}"
+                                th:selected="${t.id == editTemplate.teacher.id}"></option>
+                    </select>
+                </label>
+            </div>
+            <div class="row">
+                <label><span th:text="#{schedule.dayOfWeek}">День недели</span>
+                    <select name="dayOfWeek" required>
+                        <option th:each="d : ${days}" th:value="${d}" th:text="#{'day.' + ${d.name()}}"
+                                th:selected="${d == editTemplate.dayOfWeek}"></option>
+                    </select>
+                </label>
+                <label><span th:text="#{schedule.start}">Начало</span>
+                    <input type="time" name="startTime" th:value="${#temporals.format(editTemplate.startTime,'HH:mm')}" required></label>
+                <label><span th:text="#{schedule.end}">Конец</span>
+                    <input type="time" name="endTime" th:value="${#temporals.format(editTemplate.endTime,'HH:mm')}" required></label>
+                <label><span th:text="#{schedule.room}">Кабинет</span>
+                    <input type="text" name="room" th:value="${editTemplate.room}"></label>
+            </div>
+            <button class="btn" type="submit" th:text="#{action.save}">Сохранить</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

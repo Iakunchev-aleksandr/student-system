@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head(#{page.generate})}"></head>
+<body>
+<header th:replace="~{fragments/common :: topbar}"></header>
+<div class="container">
+    <h1 th:text="#{generate.heading}">Генерация уроков</h1>
+    <p class="muted" th:text="#{generate.desc}">Разворачивает недельный шаблон в конкретные датированные уроки за период. Повторный запуск безопасен — уже существующие уроки пропускаются.</p>
+
+    <div class="notice" th:if="${created != null}" th:text="#{generate.created(${created})}"></div>
+
+    <div class="card">
+        <form th:action="@{/admin/generate}" method="post">
+            <div class="row">
+                <label><span th:text="#{generate.from}">С</span><input type="date" name="from" th:value="${from}" required></label>
+                <label><span th:text="#{generate.to}">По</span><input type="date" name="to" th:value="${to}" required></label>
+            </div>
+            <button class="btn" type="submit" th:text="#{generate.submit}">Сгенерировать</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

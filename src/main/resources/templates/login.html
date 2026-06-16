@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head(#{page.login})}"></head>
+<body>
+<div class="login-wrap">
+    <div class="lang-login">
+        <span th:replace="~{fragments/common :: langswitch}"></span>
+    </div>
+    <h1 th:text="#{login.heading}">Учебный журнал</h1>
+    <p class="muted small" th:text="#{login.subtitle}">Вход для студентов, преподавателей и администратора.</p>
+    <div class="card">
+        <form th:action="@{/login}" method="post">
+            <label for="username" th:text="#{login.username}">Логин</label>
+            <input type="text" id="username" name="username" autofocus required>
+            <label for="password" th:text="#{login.password}">Пароль</label>
+            <input type="password" id="password" name="password" required>
+            <div th:if="${param.error}" class="error" th:text="#{login.error}">Неверный логин или пароль.</div>
+            <div th:if="${param.logout}" class="notice" style="margin-top:.6rem" th:text="#{login.loggedout}">Вы вышли из системы.</div>
+            <button class="btn" type="submit" style="width:100%" th:text="#{login.submit}">Войти</button>
+        </form>
+    </div>
+    <div class="card small">
+        <strong th:text="#{login.demo.title}">Демо-доступы</strong>
+        <p class="creds" style="margin:.5rem 0 0">
+            admin / admin123 — <span th:text="#{login.demo.admin}">администратор</span><br>
+            ivanov / teacher123 — <span th:text="#{login.demo.teacher}">преподаватель</span><br>
+            petrova / teacher123 — <span th:text="#{login.demo.supervisor}">кл. руководитель 10-А</span><br>
+            s1 / student123 — <span th:text="#{login.demo.student}">студент</span>
+        </p>
+    </div>
+</div>
+</body>
+</html>

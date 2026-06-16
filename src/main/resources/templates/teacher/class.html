@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head(#{page.teacherClass})}"></head>
+<body>
+<header th:replace="~{fragments/common :: topbar}"></header>
+<div class="container">
+    <a class="btn tiny secondary" th:href="@{/teacher}" th:text="#{common.back}">← Назад</a>
+    <h1 th:text="#{teacherClass.heading(${clazz.name})}">Группа</h1>
+    <p class="muted" th:text="#{teacherClass.desc}">Обзор для классного руководителя: состав группы и полное расписание за неделю.</p>
+
+    <div class="card">
+        <h3 th:text="#{teacherClass.students}">Студенты</h3>
+        <ol>
+            <li th:each="s : ${students}" th:text="${s.fullName}">ФИО</li>
+        </ol>
+    </div>
+
+    <div class="week-nav">
+        <a class="btn tiny secondary" th:href="@{/teacher/class/{id}(id=${clazz.id},week=${week - 1})}" th:text="#{week.prev}">← Предыдущая</a>
+        <span class="muted" th:text="${#temporals.format(monday,'dd.MM')} + ' — ' + ${#temporals.format(sunday,'dd.MM.yyyy')}"></span>
+        <a class="btn tiny secondary" th:href="@{/teacher/class/{id}(id=${clazz.id},week=${week + 1})}" th:text="#{week.next}">Следующая →</a>
+    </div>
+
+    <div class="grid-days">
+        <div class="day" th:each="d : ${days}" th:classappend="${d.today} ? ' today' : ''">
+            <h3>
+                <span th:text="#{'day.' + ${d.date.dayOfWeek.name()}}">День</span>
+                <span class="date" th:text="${#temporals.format(d.date,'dd.MM')}"></span>
+            </h3>
+            <p class="muted small" th:if="${d.lessons.isEmpty()}" th:text="#{day.none}">Нет занятий</p>
+            <div class="lesson-line" th:each="l : ${d.lessons}">
+                <span class="time" th:text="${#temporals.format(l.startTime,'HH:mm')}"></span>
+                <span th:text="${l.subject.name}">Предмет</span>
+                <span class="muted small" th:text="' · ' + ${l.teacher.fullName}"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 th:text="#{teacherClass.grades}">Оценки</h3>
+        <p class="muted small" th:if="${gradeLessons.isEmpty()}" th:text="#{teacherClass.noGrades}">Оценок за эту неделю пока нет.</p>
+        <div th:unless="${gradeLessons.isEmpty()}" style="overflow-x:auto">
+            <table class="grades-table">
+                <thead>
+                <tr>
+                    <th th:text="#{teacherClass.studentCol}">Студент</th>
+                    <th th:each="l : ${gradeLessons}">
+                        <span th:text="${l.subject.name}">Предмет</span><br>
+                        <span class="muted small" th:text="${#temporals.format(l.date,'dd.MM')}"></span>
+                    </th>
+                    <th th:text="#{teacherClass.average}">Средний балл</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${gradeRows}">
+                    <td th:text="${row.student.fullName}">ФИО</td>
+                    <td th:each="g : ${row.grades}">
+                        <span th:if="${g != null}" class="pill grade" th:text="${g}">5</span>
+                        <span th:if="${g == null}" class="muted">·</span>
+                    </td>
+                    <td th:text="${row.average != null ? row.average : '—'}">—</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

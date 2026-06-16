@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head(#{page.studentWeek})}"></head>
+<body>
+<header th:replace="~{fragments/common :: topbar}"></header>
+<div class="container">
+    <h1 th:text="#{studentWeek.heading}">Расписание на неделю</h1>
+    <p class="muted" th:if="${user.schoolClass != null}" th:text="#{studentWeek.group(${user.schoolClass.name})}"></p>
+    <p class="muted" th:if="${user.schoolClass == null}" th:text="#{studentWeek.noGroup}">Вы пока не привязаны к группе. Обратитесь к администратору.</p>
+
+    <div class="week-nav">
+        <a class="btn tiny secondary" th:href="@{/student(week=${week - 1})}" th:text="#{week.prev}">← Предыдущая</a>
+        <span class="muted" th:text="${#temporals.format(monday,'dd.MM')} + ' — ' + ${#temporals.format(sunday,'dd.MM.yyyy')}"></span>
+        <a class="btn tiny secondary" th:href="@{/student(week=${week + 1})}" th:text="#{week.next}">Следующая →</a>
+        <a class="btn tiny secondary" th:href="@{/student}" th:if="${week != 0}" th:text="#{week.current}">Текущая</a>
+    </div>
+
+    <div class="grid-days">
+        <div class="day" th:each="d : ${days}" th:classappend="${d.today} ? ' today' : ''">
+            <h3>
+                <a th:href="@{/student/day(date=${d.date})}"
+                   th:text="#{'day.' + ${d.date.dayOfWeek.name()}}">День</a>
+                <span class="date" th:text="${#temporals.format(d.date,'dd.MM')}"></span>
+            </h3>
+            <p class="muted small" th:if="${d.lessons.isEmpty()}" th:text="#{day.none}">Нет занятий</p>
+            <div class="lesson-line" th:each="l : ${d.lessons}">
+                <span class="time" th:text="${#temporals.format(l.startTime,'HH:mm')}"></span>
+                <span th:text="${l.subject.name}">Предмет</span>
+            </div>
+            <p th:if="${d.eventCount > 0}" style="margin:.5rem 0 0">
+                <span class="badge-event" th:text="#{studentWeek.events(${d.eventCount})}"></span>
+            </p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head(#{classes.edit})}"></head>
+<body>
+<header th:replace="~{fragments/common :: topbar}"></header>
+<div class="container">
+    <a class="btn tiny secondary" th:href="@{/admin/classes}" th:text="#{common.back}">← Назад</a>
+    <h1 th:text="#{classes.edit}">Редактирование группы</h1>
+    <div th:replace="~{fragments/common :: flash}"></div>
+
+    <div class="card">
+        <form th:action="@{/admin/classes/{id}(id=${editClass.id})}" method="post">
+            <div class="row">
+                <label><span th:text="#{classes.studyYear}">Год обучения</span>
+                    <input type="number" name="studyYear" min="1" max="12" th:value="${editClass.studyYear}" required></label>
+                <label><span th:text="#{classes.groupCode}">Код группы</span>
+                    <input type="text" name="groupCode" th:value="${editClass.groupCode}" required></label>
+            </div>
+            <label><span th:text="#{classes.supervisor}">Классный руководитель</span>
+                <select name="supervisorId">
+                    <option value="" th:text="#{common.none}">— нет —</option>
+                    <option th:each="t : ${teachers}" th:value="${t.id}" th:text="${t.fullName}"
+                            th:selected="${editClass.supervisor != null and editClass.supervisor.id == t.id}"></option>
+                </select>
+            </label>
+            <button class="btn" type="submit" th:text="#{action.save}">Сохранить</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

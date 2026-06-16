@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head(#{page.studentDay})}"></head>
+<body>
+<header th:replace="~{fragments/common :: topbar}"></header>
+<div class="container">
+    <div class="week-nav">
+        <a class="btn tiny secondary" th:href="@{/student(week=0)}" th:text="#{studentDay.back}">← К неделе</a>
+        <h1 style="margin:0" th:text="#{'day.' + ${date.dayOfWeek.name()}} + ', ' + ${#temporals.format(date,'dd.MM.yyyy')}">День</h1>
+    </div>
+
+    <div class="card" th:if="${!events.isEmpty()}">
+        <h3 th:text="#{studentDay.notifications}">Уведомления</h3>
+        <div th:each="e : ${events}" style="margin:.4rem 0">
+            <span th:classappend="${e.type.name() == 'EXAM'} ? 'badge-exam' : 'badge-event'" class="badge-event"
+                  th:text="#{'eventType.' + ${e.type.name()}}">тип</span>
+            <strong th:text="${e.title}">Название</strong>
+            <div class="muted small" th:if="${e.description}" th:text="${e.description}"></div>
+        </div>
+    </div>
+
+    <p class="muted" th:if="${rows.isEmpty()}" th:text="#{studentDay.noLessons}">В этот день занятий нет.</p>
+
+    <div class="card" th:each="row : ${rows}">
+        <h3 th:text="${#temporals.format(row.lesson.startTime,'HH:mm')} + '–' + ${#temporals.format(row.lesson.endTime,'HH:mm')} + '  ' + ${row.lesson.subject.name}">Урок</h3>
+        <p class="muted small">
+            <span th:text="${row.lesson.teacher.fullName}">Преподаватель</span>
+            <span th:if="${row.lesson.room}" th:text="' · ' + #{common.room} + ' ' + ${row.lesson.room}"></span>
+        </p>
+
+        <p>
+            <span th:if="${row.grade != null}"><span th:text="#{studentDay.grade}">Оценка:</span> <span class="pill grade" th:text="${row.grade}">5</span></span>
+            <span th:if="${row.grade == null}" class="muted" th:text="#{studentDay.noGrade}">Оценки нет</span>
+            &nbsp;·&nbsp;
+            <span th:if="${row.attendance != null}">
+                <span class="dot" th:classappend="${row.attendance.name()}"></span>
+                <span th:classappend="'att-' + ${row.attendance.name()}" th:text="#{'attendance.' + ${row.attendance.name()}}">статус</span>
+            </span>
+            <span th:if="${row.attendance == null}" class="muted" th:text="#{studentDay.noAttendance}">Посещаемость не отмечена</span>
+        </p>
+
+        <div th:if="${!row.comments.isEmpty()}">
+            <strong class="small" th:text="#{studentDay.teacherComments}">Комментарии преподавателя:</strong>
+            <div class="muted small" th:each="c : ${row.comments}">
+                <span th:text="${c.author.fullName}">Автор</span>: <span th:text="${c.text}">текст</span>
+            </div>
+        </div>
+
+        <div th:with="files=${@fileAttachmentRepository.findByLessonOrderByUploadedAt(row.lesson)}">
+            <div th:if="${!files.isEmpty()}" style="margin-top:.4rem">
+                <strong class="small" th:text="#{studentDay.files}">Файлы:</strong>
+                <span th:each="f : ${files}">
+                    <a th:href="@{/files/{id}(id=${f.id})}" th:text="${f.originalName}">файл</a>&nbsp;
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 th:text="#{studentDay.myNote}">Моя заметка на день</h3>
+        <form th:action="@{/student/note}" method="post">
+            <input type="hidden" name="date" th:value="${date}">
+            <textarea name="text" th:placeholder="#{studentDay.notePlaceholder}"
+                      th:text="${note != null ? note.text : ''}"></textarea>
+            <label style="display:flex;align-items:center;gap:.4rem;margin-top:.5rem">
+                <input type="checkbox" name="forTeacher" value="true" style="width:auto"
+                       th:checked="${note != null and note.forTeacher}">
+                <span th:text="#{studentDay.showToTeacher}">Показать эту заметку преподавателям дня</span>
+            </label>
+            <button class="btn" type="submit" th:text="#{action.save}">Сохранить</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

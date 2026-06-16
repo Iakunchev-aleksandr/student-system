@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head(#{page.teacherHome})}"></head>
+<body>
+<header th:replace="~{fragments/common :: topbar}"></header>
+<div class="container">
+    <a class="btn tiny secondary" th:href="@{/teacher}" th:text="#{lesson.back}">← К расписанию</a>
+    <h1 th:text="${lesson.subject.name} + ' · ' + ${lesson.schoolClass.name}">Урок</h1>
+    <p class="muted"
+       th:text="#{'day.' + ${lesson.date.dayOfWeek.name()}} + ', ' + ${#temporals.format(lesson.date,'dd.MM.yyyy')} + ' · ' + ${#temporals.format(lesson.startTime,'HH:mm')} + '–' + ${#temporals.format(lesson.endTime,'HH:mm')}"></p>
+
+    <div class="card">
+        <h3 th:text="#{lesson.gradesAttendance}">Оценки и посещаемость</h3>
+        <form th:action="@{/teacher/lesson/{id}/grades(id=${lesson.id})}" method="post">
+            <table>
+                <thead><tr><th th:text="#{lesson.student}">Студент</th><th style="width:110px" th:text="#{lesson.grade}">Оценка</th><th style="width:200px" th:text="#{lesson.attendance}">Посещаемость</th></tr></thead>
+                <tbody>
+                <tr th:each="r : ${rows}">
+                    <td th:text="${r.student.fullName}">ФИО</td>
+                    <td>
+                        <input type="number" min="2" max="5" th:name="'grade_' + ${r.student.id}" th:value="${r.grade}">
+                    </td>
+                    <td>
+                        <select th:name="'att_' + ${r.student.id}">
+                            <option value="">—</option>
+                            <option th:each="st : ${statuses}" th:value="${st}" th:text="#{'attendance.' + ${st.name()}}"
+                                    th:selected="${st == r.attendance}"></option>
+                        </select>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <button class="btn" type="submit" th:text="#{action.save}">Сохранить</button>
+        </form>
+    </div>
+
+    <div class="card" th:if="${!studentNotes.isEmpty()}">
+        <h3 th:text="#{lesson.studentNotes}">Заметки студентов для преподавателя</h3>
+        <div class="muted small" th:each="n : ${studentNotes}">
+            <strong th:text="${n.student.fullName}">ФИО</strong>: <span th:text="${n.text}">текст</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 th:text="#{lesson.comments}">Комментарии к уроку</h3>
+        <div class="muted small" th:each="c : ${comments}" style="margin:.3rem 0">
+            <strong th:text="${c.author.fullName}">Автор</strong>: <span th:text="${c.text}">текст</span>
+        </div>
+        <form th:action="@{/teacher/lesson/{id}/comment(id=${lesson.id})}" method="post">
+            <textarea name="text" th:placeholder="#{lesson.commentPlaceholder}" required></textarea>
+            <button class="btn" type="submit" th:text="#{lesson.addComment}">Добавить комментарий</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3 th:text="#{lesson.files}">Файлы</h3>
+        <p th:with="files=${@fileAttachmentRepository.findByLessonOrderByUploadedAt(lesson)}">
+            <span th:if="${files.isEmpty()}" class="muted small" th:text="#{lesson.noFiles}">Файлов пока нет.</span>
+            <span th:each="f : ${files}">
+                <a th:href="@{/files/{id}(id=${f.id})}" th:text="${f.originalName}">файл</a>&nbsp;
+            </span>
+        </p>
+        <form th:action="@{/teacher/lesson/{id}/file(id=${lesson.id})}" method="post" enctype="multipart/form-data">
+            <input type="file" name="file" required>
+            <button class="btn" type="submit" th:text="#{lesson.uploadFile}">Загрузить файл</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3 th:text="#{lesson.addEvent}">Добавить событие (экзамен / активность)</h3>
+        <p class="muted small" th:text="#{lesson.eventDesc}">Событие появится у студентов группы в этот день.</p>
+        <form th:action="@{/teacher/lesson/{id}/event(id=${lesson.id})}" method="post">
+            <label th:text="#{lesson.eventTitle}">Название</label><input type="text" name="title" required>
+            <label th:text="#{lesson.eventType}">Тип</label>
+            <select name="type">
+                <option th:each="t : ${eventTypes}" th:value="${t}" th:text="#{'eventType.' + ${t.name()}}"></option>
+            </select>
+            <label th:text="#{lesson.eventDescription}">Описание</label><textarea name="description"></textarea>
+            <button class="btn" type="submit" th:text="#{lesson.addEventBtn}">Добавить событие</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head(#{page.subjects})}"></head>
+<body>
+<header th:replace="~{fragments/common :: topbar}"></header>
+<div class="container">
+    <h1 th:text="#{subjects.heading}">Предметы</h1>
+    <div th:replace="~{fragments/common :: flash}"></div>
+
+    <div class="card">
+        <p class="muted small" th:if="${subjects.isEmpty()}" th:text="#{subjects.empty}">Пока нет предметов.</p>
+        <table th:unless="${subjects.isEmpty()}">
+            <tbody>
+            <tr th:each="s : ${subjects}">
+                <td>
+                    <form th:action="@{/admin/subjects/{id}(id=${s.id})}" method="post"
+                          style="display:flex;gap:.4rem;align-items:center;margin:0">
+                        <input type="text" name="name" th:value="${s.name}" required style="max-width:260px">
+                        <button class="btn tiny" type="submit" th:text="#{action.save}">Сохранить</button>
+                    </form>
+                </td>
+                <td style="text-align:right">
+                    <form th:action="@{/admin/subjects/{id}/delete(id=${s.id})}" method="post" style="margin:0"
+                          th:attr="data-msg=#{common.confirmDelete}" onsubmit="return confirm(this.dataset.msg)">
+                        <button class="btn tiny secondary" type="submit" th:text="#{action.delete}">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3 th:text="#{subjects.new}">Новый предмет</h3>
+        <form th:action="@{/admin/subjects}" method="post">
+            <label><span th:text="#{subjects.name}">Название</span><input type="text" name="name" required></label>
+            <button class="btn" type="submit" th:text="#{action.add}">Добавить</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

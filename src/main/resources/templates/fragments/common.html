@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title}">Учебная система</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+
+<header th:fragment="topbar" class="topbar">
+    <span class="brand" th:text="#{nav.brand}">Журнал</span>
+    <nav>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin}" th:text="#{nav.overview}">Обзор</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/users}" th:text="#{nav.users}">Пользователи</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/classes}" th:text="#{nav.classes}">Группы</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/subjects}" th:text="#{nav.subjects}">Предметы</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/schedule}" th:text="#{nav.schedule}">Расписание</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/generate}" th:text="#{nav.generate}">Генерация</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/journal}" th:text="#{nav.journal}">Журнал</a>
+        <a sec:authorize="hasRole('TEACHER')" th:href="@{/teacher}" th:text="#{nav.myschedule}">Моё расписание</a>
+        <a sec:authorize="hasRole('STUDENT')" th:href="@{/student}" th:text="#{nav.studentSchedule}">Расписание</a>
+    </nav>
+    <span class="spacer"></span>
+    <span class="lang" th:replace="~{fragments/common :: langswitch}"></span>
+    <img th:if="${me != null and me.photoName != null}" class="avatar"
+         th:src="@{/users/{id}/photo(id=${me.id})}" alt="">
+    <span class="who" sec:authentication="name"></span>
+    <form th:action="@{/logout}" method="post" style="margin:0">
+        <button class="btn tiny secondary" type="submit" th:text="#{action.logout}">Выйти</button>
+    </form>
+</header>
+
+<span th:fragment="langswitch" class="lang">
+    <a href="?lang=ja" data-lang="ja" th:text="#{lang.ja}" th:classappend="${#locale.language == 'ja'} ? ' active' : ''">日本語</a>
+    <a href="?lang=en" data-lang="en" th:text="#{lang.en}" th:classappend="${#locale.language == 'en'} ? ' active' : ''">English</a>
+    <a href="?lang=ru" data-lang="ru" th:text="#{lang.ru}" th:classappend="${#locale.language == 'ru'} ? ' active' : ''">Русский</a>
+    <script>
+        // Сохраняем текущие параметры страницы (например, ?date=...), меняя только язык.
+        (function () {
+            var here = new URL(window.location.href);
+            document.querySelectorAll('.lang a[data-lang]').forEach(function (a) {
+                here.searchParams.set('lang', a.getAttribute('data-lang'));
+                a.setAttribute('href', '?' + here.searchParams.toString());
+            });
+        })();
+    </script>
+</span>
+
+<div th:fragment="flash">
+    <div class="notice" th:if="${message}" th:text="${message}" style="margin-bottom:1rem"></div>
+    <div class="error" th:if="${error}" th:text="${error}" style="margin-bottom:1rem"></div>
+</div>
+
+</body>
+</html>

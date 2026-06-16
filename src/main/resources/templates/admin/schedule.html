@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head(#{page.schedule})}"></head>
+<body>
+<header th:replace="~{fragments/common :: topbar}"></header>
+<div class="container">
+    <h1 th:text="#{schedule.heading}">Недельный шаблон расписания</h1>
+    <p class="muted" th:text="#{schedule.desc}">Повторяющиеся слоты. После изменений зайдите в «Генерацию», чтобы развернуть их в конкретные уроки.</p>
+    <div th:replace="~{fragments/common :: flash}"></div>
+
+    <div class="card">
+        <table>
+            <thead><tr><th th:text="#{schedule.colDay}">День</th><th th:text="#{schedule.colTime}">Время</th><th th:text="#{schedule.colGroup}">Группа</th><th th:text="#{schedule.colSubject}">Предмет</th><th th:text="#{schedule.colTeacher}">Преподаватель</th><th th:text="#{schedule.colRoom}">Каб.</th><th th:text="#{common.actions}">Действия</th></tr></thead>
+            <tbody>
+            <tr th:each="t : ${templates}">
+                <td th:text="#{'day.' + ${t.dayOfWeek.name()}}">Пн</td>
+                <td th:text="${#temporals.format(t.startTime,'HH:mm')} + '–' + ${#temporals.format(t.endTime,'HH:mm')}">09:00</td>
+                <td th:text="${t.schoolClass.name}">1年A組</td>
+                <td th:text="${t.subject.name}">Математика</td>
+                <td th:text="${t.teacher.fullName}">Иванов</td>
+                <td th:text="${t.room}">305</td>
+                <td>
+                    <div class="actions">
+                        <a class="btn tiny secondary" th:href="@{/admin/schedule/{id}/edit(id=${t.id})}" th:text="#{action.edit}">Редактировать</a>
+                        <form th:action="@{/admin/schedule/{id}/delete(id=${t.id})}" method="post"
+                              th:attr="data-msg=#{common.confirmDelete}" onsubmit="return confirm(this.dataset.msg)">
+                            <button class="btn tiny secondary" type="submit" th:text="#{action.delete}">Удалить</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            <tr th:if="${templates.isEmpty()}"><td colspan="7" class="muted" th:text="#{schedule.empty}">Слотов пока нет.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3 th:text="#{schedule.new}">Новый слот</h3>
+        <form th:action="@{/admin/schedule}" method="post">
+            <div class="row">
+                <label><span th:text="#{schedule.group}">Группа</span>
+                    <select name="schoolClassId" required>
+                        <option th:each="c : ${classes}" th:value="${c.id}" th:text="${c.name}"></option>
+                    </select>
+                </label>
+                <label><span th:text="#{schedule.subject}">Предмет</span>
+                    <select name="subjectId" required>
+                        <option th:each="s : ${subjects}" th:value="${s.id}" th:text="${s.name}"></option>
+                    </select>
+                </label>
+                <label><span th:text="#{schedule.teacher}">Преподаватель</span>
+                    <select name="teacherId" required>
+                        <option th:each="t : ${teachers}" th:value="${t.id}" th:text="${t.fullName}"></option>
+                    </select>
+                </label>
+            </div>
+            <div class="row">
+                <label><span th:text="#{schedule.dayOfWeek}">День недели</span>
+                    <select name="dayOfWeek" required>
+                        <option th:each="d : ${days}" th:value="${d}" th:text="#{'day.' + ${d.name()}}"></option>
+                    </select>
+                </label>
+                <label><span th:text="#{schedule.start}">Начало</span><input type="time" name="startTime" required></label>
+                <label><span th:text="#{schedule.end}">Конец</span><input type="time" name="endTime" required></label>
+                <label><span th:text="#{schedule.room}">Кабинет</span><input type="text" name="room"></label>
+            </div>
+            <button class="btn" type="submit" th:text="#{schedule.addSlot}">Добавить слот</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

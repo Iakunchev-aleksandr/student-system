@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head(#{users.edit})}"></head>
+<body>
+<header th:replace="~{fragments/common :: topbar}"></header>
+<div class="container">
+    <a class="btn tiny secondary" th:href="@{/admin/users}" th:text="#{common.back}">← Назад</a>
+    <h1 th:text="#{users.edit}">Редактирование пользователя</h1>
+    <div th:replace="~{fragments/common :: flash}"></div>
+
+    <div class="card">
+        <p th:if="${editUser.photoName != null}">
+            <img class="avatar" th:src="@{/users/{id}/photo(id=${editUser.id})}" alt="">
+        </p>
+        <form th:action="@{/admin/users/{id}(id=${editUser.id})}" method="post" enctype="multipart/form-data">
+            <div class="row">
+                <div><label th:text="#{users.login}">Логин</label>
+                    <input type="text" name="username" th:value="${editUser.username}" required></div>
+                <div><label th:text="#{users.password}">Пароль</label>
+                    <input type="text" name="password" th:placeholder="#{users.passwordKeep}"></div>
+            </div>
+            <div class="row">
+                <div><label th:text="#{users.lastName}">Фамилия</label>
+                    <input type="text" name="lastName" th:value="${editUser.lastName}" required></div>
+                <div><label th:text="#{users.firstName}">Имя</label>
+                    <input type="text" name="firstName" th:value="${editUser.firstName}" required></div>
+            </div>
+            <div class="row">
+                <div>
+                    <label th:text="#{users.role}">Роль</label>
+                    <select name="role">
+                        <option th:each="r : ${roles}" th:value="${r}" th:text="#{'role.' + ${r.name()}}"
+                                th:selected="${r == editUser.role}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label th:text="#{users.group}">Группа (для студента)</label>
+                    <select name="schoolClassId">
+                        <option value="" th:text="#{common.none}">— нет —</option>
+                        <option th:each="c : ${classes}" th:value="${c.id}" th:text="${c.name}"
+                                th:selected="${editUser.schoolClass != null and editUser.schoolClass.id == c.id}"></option>
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div><label th:text="#{users.studentNumber}">Номер студента</label>
+                    <input type="text" name="studentNumber" inputmode="numeric" pattern="\d{6}" maxlength="6"
+                           th:value="${editUser.studentNumber}" placeholder="123456"></div>
+                <div><label th:text="#{users.photo}">Фото</label><input type="file" name="photo" accept="image/*"></div>
+            </div>
+            <button class="btn" type="submit" th:text="#{action.save}">Сохранить</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>
