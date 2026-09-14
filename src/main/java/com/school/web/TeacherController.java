@@ -51,30 +51,10 @@ public class TeacherController {
         this.notes = notes;
     }
 
+    // Прежняя стартовая страница преподавателя заменена вкладкой «Группы».
     @GetMapping
-    public String home(@RequestParam(defaultValue = "0") int week, Principal principal, Model model) {
-        AppUser teacher = currentUser.require(principal);
-        LocalDate monday = LocalDate.now()
-                .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-                .plusWeeks(week);
-        LocalDate sunday = monday.plusDays(6);
-
-        List<Lesson> weekLessons = lessons
-                .findByTeacherAndDateBetweenOrderByDateAscStartTimeAsc(teacher, monday, sunday);
-        List<WeekDay> days = new ArrayList<>();
-        for (int i = 0; i < 7; i++) {
-            LocalDate d = monday.plusDays(i);
-            List<Lesson> dayLessons = weekLessons.stream().filter(l -> l.getDate().equals(d)).toList();
-            days.add(new WeekDay(d, dayLessons, 0));
-        }
-
-        model.addAttribute("user", teacher);
-        model.addAttribute("days", days);
-        model.addAttribute("week", week);
-        model.addAttribute("monday", monday);
-        model.addAttribute("sunday", sunday);
-        model.addAttribute("supervisedClasses", classes.findBySupervisor(teacher));
-        return "teacher/home";
+    public String home() {
+        return "redirect:/groups";
     }
 
     @GetMapping("/lesson/{id}")

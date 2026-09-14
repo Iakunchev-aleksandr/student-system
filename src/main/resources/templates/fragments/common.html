@@ -12,13 +12,14 @@
     <span class="brand" th:text="#{nav.brand}">Журнал</span>
     <nav>
         <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin}" th:text="#{nav.overview}">Обзор</a>
+        <a sec:authorize="hasAnyRole('ADMIN','TEACHER')" th:href="@{/groups}" th:text="#{nav.groups}">Группы</a>
         <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/users}" th:text="#{nav.users}">Пользователи</a>
-        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/classes}" th:text="#{nav.classes}">Группы</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/courses}" th:text="#{nav.courses}">Курсы</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/classes}" th:text="#{nav.manageGroups}">Управление группами</a>
         <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/subjects}" th:text="#{nav.subjects}">Предметы</a>
         <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/schedule}" th:text="#{nav.schedule}">Расписание</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/calendar}" th:text="#{nav.calendar}">Каникулы</a>
         <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/generate}" th:text="#{nav.generate}">Генерация</a>
-        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/journal}" th:text="#{nav.journal}">Журнал</a>
-        <a sec:authorize="hasRole('TEACHER')" th:href="@{/teacher}" th:text="#{nav.myschedule}">Моё расписание</a>
         <a sec:authorize="hasRole('STUDENT')" th:href="@{/student}" th:text="#{nav.studentSchedule}">Расписание</a>
     </nav>
     <span class="spacer"></span>

@@ -1,0 +1,537 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>学級日誌 — プロダクト紹介</title>
+<style>
+  :root{
+    --paper:#f5f1e8; --surface:#ffffff; --ink:#2a2723; --muted:#6b655b;
+    --line:#e2dccd; --accent:#145a4c; --accent-2:#1d7a66; --accent-soft:#e4efe9;
+    --present:#2f7d32; --late:#b6791b; --absent:#b23a30; --excused:#6b655b;
+    --radius:14px;
+    --sans:"Yu Gothic","Hiragino Kaku Gothic ProN","Noto Sans JP",Meiryo,system-ui,sans-serif;
+    --serif:"Yu Mincho","Hiragino Mincho ProN","Noto Serif JP",Georgia,serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:var(--sans); font-size:17px; line-height:1.75;
+    -webkit-font-smoothing:antialiased;
+  }
+  .deck{scroll-snap-type:y mandatory; height:100vh; overflow-y:scroll;}
+  .slide{
+    scroll-snap-align:start; min-height:100vh; width:100%;
+    display:flex; flex-direction:column; justify-content:center;
+    padding:6vh 8vw; position:relative;
+  }
+  .slide-inner{max-width:1080px; margin:0 auto; width:100%;}
+  h1,h2,h3{font-family:var(--serif); font-weight:600; line-height:1.28; margin:0;}
+  .kicker{
+    font-size:.82rem; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--accent); font-weight:700; margin-bottom:1rem; font-family:var(--sans);
+  }
+  .slide h2{font-size:2.2rem; margin-bottom:.4rem;}
+  .lead{font-size:1.15rem; color:var(--muted); margin:.2rem 0 2rem; max-width:44em;}
+  p{margin:.4rem 0;}
+  .muted{color:var(--muted);}
+  .small{font-size:.9rem;}
+
+  /* ---- dark slides ---- */
+  .slide.dark{
+    background:linear-gradient(150deg,#103f35 0%,#145a4c 55%,#1d7a66 100%);
+    color:#f3f1ea;
+  }
+  .slide.dark h1,.slide.dark h2,.slide.dark h3{color:#fff;}
+  .slide.dark .kicker{color:#a9d8c9;}
+  .slide.dark .lead,.slide.dark .muted{color:#cfe4dc;}
+
+  /* ---- title ---- */
+  .title-brand{font-size:5rem; letter-spacing:.04em; line-height:1.05; margin-bottom:1rem;}
+  .title-sub{font-size:1.5rem; font-family:var(--serif); color:#eafff6; margin-bottom:2.2rem;}
+  .title-tags{display:flex; gap:.7rem; flex-wrap:wrap; margin-bottom:2.4rem;}
+  .tag{
+    border:1px solid rgba(255,255,255,.35); border-radius:999px;
+    padding:.35rem 1rem; font-size:.95rem; color:#eafff6;
+  }
+  .title-stack{font-size:.9rem; color:#b8d8cd; letter-spacing:.02em;}
+
+  /* ---- cards & grids ---- */
+  .grid{display:grid; gap:1.1rem;}
+  .g2{grid-template-columns:repeat(2,1fr);}
+  .g3{grid-template-columns:repeat(3,1fr);}
+  .card{
+    background:var(--surface); border:1px solid var(--line);
+    border-radius:var(--radius); padding:1.3rem 1.4rem;
+  }
+  .card h3{font-size:1.15rem; margin-bottom:.35rem;}
+  .card p{font-size:.98rem; color:var(--muted); margin:.15rem 0 0;}
+  .ico{
+    width:44px; height:44px; border-radius:50%; background:var(--accent-soft);
+    color:var(--accent); display:flex; align-items:center; justify-content:center;
+    font-size:1.35rem; margin-bottom:.7rem; font-family:var(--serif); font-weight:700;
+  }
+  .num{
+    width:38px; height:38px; border-radius:50%; background:var(--accent); color:#fff;
+    display:inline-flex; align-items:center; justify-content:center; font-weight:700;
+    font-family:var(--serif); flex:0 0 auto;
+  }
+
+  /* problem->solution rows */
+  .ps{display:flex; flex-direction:column; gap:.75rem;}
+  .ps-row{display:grid; grid-template-columns:1fr auto 1.2fr; gap:1rem; align-items:center;}
+  .ps-row .from{background:#fbe7e4; border:1px solid #f0cfc8; color:#7a2c23; border-radius:12px; padding:.7rem 1rem; font-size:.98rem;}
+  .ps-row .to{background:var(--accent-soft); border:1px solid #c7e0d5; color:#0f4a3e; border-radius:12px; padding:.7rem 1rem; font-size:.98rem; font-weight:600;}
+  .ps-row .arr{color:var(--accent); font-size:1.4rem;}
+
+  /* role matrix */
+  .roles{display:grid; grid-template-columns:repeat(3,1fr); gap:1.1rem;}
+  .role{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:1.3rem 1.4rem;}
+  .role .badge{display:inline-block; font-size:.8rem; font-weight:700; color:var(--accent); background:var(--accent-soft); border-radius:999px; padding:.2rem .7rem; margin-bottom:.6rem;}
+  .role ul{margin:.5rem 0 0; padding-left:1.1rem;}
+  .role li{font-size:.95rem; color:var(--muted); margin:.25rem 0;}
+  .role .sup{margin-top:.7rem; font-size:.85rem; color:var(--accent); font-weight:600;}
+
+  /* flow */
+  .flow{display:flex; align-items:stretch; gap:.9rem; flex-wrap:wrap;}
+  .flow .step{flex:1; min-width:180px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:1.1rem 1.2rem;}
+  .flow .step h3{font-size:1.05rem;}
+  .flow .step p{font-size:.9rem; color:var(--muted); margin-top:.3rem;}
+  .flow .go{align-self:center; color:var(--accent); font-size:1.6rem; font-weight:700;}
+  .callout{margin-top:1.3rem; background:var(--accent-soft); border:1px solid #c7e0d5; border-radius:12px; padding:.9rem 1.2rem; color:#0f4a3e;}
+  .callout b{color:var(--accent);}
+
+  /* access tiers */
+  .tiers{display:grid; grid-template-columns:repeat(3,1fr); gap:1.1rem; align-items:end;}
+  .tier{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:1.2rem 1.3rem; text-align:center;}
+  .tier .scope{font-family:var(--serif); font-weight:700; font-size:1.05rem; color:var(--accent); margin-top:.3rem;}
+  .tier.t1{border-color:#c7e0d5;} .tier.t2{} .tier.t3{}
+  .tier .h{font-size:.8rem; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); font-weight:700;}
+
+  /* mock UI */
+  .mock{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; box-shadow:0 10px 30px rgba(20,90,76,.08);}
+  .mock .bar{background:#fff; border-bottom:1px solid var(--line); padding:.5rem .9rem; font-family:var(--serif); font-weight:600; color:var(--ink); display:flex; align-items:center; gap:.6rem; font-size:.9rem;}
+  .mock .bar .dotr{width:9px;height:9px;border-radius:50%;background:#e2dccd;}
+  .mock .body{padding:1rem;}
+  .wk{display:grid; grid-template-columns:repeat(3,1fr); gap:.55rem;}
+  .wk .d{border:1px solid var(--line); border-radius:9px; padding:.5rem .6rem; font-size:.72rem;}
+  .wk .d.today{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset;}
+  .wk .d b{font-family:var(--serif); font-size:.8rem;}
+  .wk .d .ln{color:var(--muted); border-top:1px dashed var(--line); padding-top:.2rem; margin-top:.2rem;}
+  .lesson-card{border:1px solid var(--line); border-radius:10px; padding:.7rem .8rem; font-size:.82rem;}
+  .lesson-card .pill{display:inline-block; background:var(--accent-soft); color:var(--accent); border-radius:999px; padding:.05rem .5rem; font-weight:700;}
+
+  /* attendance legend */
+  .att{display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-top:.5rem;}
+  .att .a{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:1.1rem; text-align:center;}
+  .att .dot{width:20px; height:20px; border-radius:50%; display:inline-block; margin-bottom:.5rem;}
+  .att .a .lab{font-family:var(--serif); font-weight:700; font-size:1.1rem;}
+  .att .a .en{font-size:.78rem; color:var(--muted); letter-spacing:.04em;}
+  .d-present{background:var(--present);} .d-late{background:var(--late);}
+  .d-absent{background:var(--absent);} .d-excused{background:var(--excused);}
+
+  /* palette */
+  .sw{display:flex; gap:.6rem; flex-wrap:wrap; margin:.4rem 0 1rem;}
+  .sw span{width:56px; height:56px; border-radius:10px; border:1px solid rgba(0,0,0,.08); position:relative;}
+  .sw span::after{content:attr(data-c); position:absolute; bottom:-1.3rem; left:0; font-size:.62rem; color:var(--muted);}
+
+  .feat{display:grid; grid-template-columns:repeat(3,1fr); gap:1.1rem;}
+  .tech{display:flex; gap:.6rem; flex-wrap:wrap;}
+  .tech span{background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:.4rem 1rem; font-size:.92rem; color:var(--ink);}
+
+  ul.clean{list-style:none; padding:0; margin:1rem 0 0;}
+  ul.clean li{display:flex; gap:.8rem; align-items:flex-start; margin:.7rem 0; font-size:1rem;}
+  ul.clean li .num{width:30px; height:30px; font-size:.9rem;}
+  .slide.dark ul.clean li{color:#eafff6;}
+
+  .two{display:grid; grid-template-columns:1.05fr .95fr; gap:2.2rem; align-items:center;}
+
+  /* progress + counter */
+  .hud{position:fixed; left:0; right:0; bottom:0; height:4px; background:rgba(20,90,76,.12); z-index:50;}
+  .hud .fill{height:100%; background:var(--accent); width:0;}
+  .counter{position:fixed; right:16px; bottom:14px; font-size:.8rem; color:var(--muted); z-index:50; font-variant-numeric:tabular-nums; background:rgba(245,241,232,.7); padding:.1rem .5rem; border-radius:999px;}
+  .slide.dark ~ .counter{}
+  .hint{position:fixed; left:16px; bottom:12px; font-size:.72rem; color:var(--muted); z-index:50;}
+
+  @media(max-width:820px){
+    body{font-size:15px;}
+    .slide{padding:6vh 6vw;}
+    .g2,.g3,.roles,.tiers,.feat,.att,.two{grid-template-columns:1fr;}
+    .title-brand{font-size:3.2rem;}
+    .ps-row{grid-template-columns:1fr; }
+    .ps-row .arr{transform:rotate(90deg); text-align:center;}
+  }
+</style>
+
+<div class="deck" id="deck">
+
+  <!-- 1 · TITLE -->
+  <section class="slide dark">
+    <div class="slide-inner">
+      <div class="kicker">プロダクト紹介 · School Information System</div>
+      <div class="title-brand">学級日誌</div>
+      <div class="title-sub">学校運営のための情報システム</div>
+      <div class="title-tags">
+        <span class="tag">なぜ必要か</span>
+        <span class="tag">どんな課題を解決するか</span>
+        <span class="tag">なぜこの UX なのか</span>
+      </div>
+      <div class="title-stack">Spring Boot · Thymeleaf · Spring Security · PostgreSQL &nbsp;|&nbsp; 3つの役割 · 日本語デフォルト · 多言語対応</div>
+    </div>
+  </section>
+
+  <!-- 2 · PROBLEM -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">課題</div>
+      <h2>学校現場は「情報がばらける」</h2>
+      <p class="lead">時間割・成績・出欠・連絡が、紙や先生ごとの手元に散らばっている。生徒・教員・管理者で「見えているもの」が揃わない。</p>
+      <div class="grid g2">
+        <div class="card"><div class="ico">週</div><h3>時間割は手作業</h3><p>毎週・各クラスぶんの授業を人が並べ、変更のたびに配り直す。</p></div>
+        <div class="card"><div class="ico">点</div><h3>成績・出欠が分散</h3><p>先生ごとの紙やファイルに記録され、横断して見られない。</p></div>
+        <div class="card"><div class="ico">報</div><h3>生徒に届かない連絡</h3><p>試験・行事・教材の「今日の情報」を知る共通の場所がない。</p></div>
+        <div class="card"><div class="ico">担</div><h3>担任が俯瞰できない</h3><p>自分の授業以外を見られず、クラス全体の状況が把握しづらい。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · WHAT IT IS -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">製品概要</div>
+      <h2>学級日誌とは</h2>
+      <p class="lead">時間割・成績・出欠・連絡・教材を、1つの Web アプリに集約。学校の情報を「1つの真実の情報源」にまとめます。</p>
+      <div class="two">
+        <div>
+          <ul class="clean">
+            <li><span class="num">1</span><div><b>1画面で完結する授業運営</b><br><span class="muted small">成績・出欠・コメント・ファイル・イベントを同じ場所で。</span></div></li>
+            <li><span class="num">2</span><div><b>役割ごとに最適化された見え方</b><br><span class="muted small">学生・教員・管理者が、必要なものだけを見る。</span></div></li>
+            <li><span class="num">3</span><div><b>日本語ファースト</b><br><span class="muted small">「1年A組」「担任」「出欠・公欠」— 日本の学校の言葉で。</span></div></li>
+          </ul>
+        </div>
+        <div class="mock">
+          <div class="bar"><span class="dotr"></span> 学級日誌 &nbsp;·&nbsp; 私の時間割</div>
+          <div class="body">
+            <div class="wk">
+              <div class="d"><b>月</b><div class="ln">09:00 数学</div><div class="ln">10:40 歴史</div></div>
+              <div class="d today"><b>火</b><div class="ln">09:00 英語</div><div class="ln">10:40 理科</div></div>
+              <div class="d"><b>水</b><div class="ln">09:00 国語</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · ROLES -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">利用者</div>
+      <h2>3つの役割 ＋ 担任</h2>
+      <p class="lead">アクセス権を役割で厳密に分離。ログインすると、自分の役割の画面だけに案内されます。</p>
+      <div class="roles">
+        <div class="role">
+          <span class="badge">学生</span>
+          <h3>見る人</h3>
+          <ul>
+            <li>自分のクラスの週間時間割</li>
+            <li>各授業の成績・出欠</li>
+            <li>先生のコメント・教材</li>
+            <li>試験・行事の通知</li>
+            <li>自分のメモ（先生への共有可）</li>
+          </ul>
+        </div>
+        <div class="role">
+          <span class="badge">教員</span>
+          <h3>記録する人</h3>
+          <ul>
+            <li>自分の担当授業の時間割</li>
+            <li>成績（2〜5）と出欠の入力</li>
+            <li>コメント・教材ファイル</li>
+            <li>試験・アクティビティの作成</li>
+          </ul>
+          <div class="sup">＋ 担任 → 自クラス全体の成績一覧を俯瞰</div>
+        </div>
+        <div class="role">
+          <span class="badge">管理者</span>
+          <h3>整える人</h3>
+          <ul>
+            <li>ユーザー・クラス・科目の管理</li>
+            <li>週間時間割テンプレートの作成</li>
+            <li>期間指定で授業を一括生成</li>
+            <li>全クラスの学級日誌を閲覧</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · PROBLEM -> SOLUTION -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">解決する課題</div>
+      <h2>課題 → 学級日誌の答え</h2>
+      <div class="ps">
+        <div class="ps-row"><div class="from">毎週の時間割を手で並べる</div><div class="arr">→</div><div class="to">週間テンプレートから授業を自動生成</div></div>
+        <div class="ps-row"><div class="from">成績・出欠が先生ごとにバラバラ</div><div class="arr">→</div><div class="to">授業単位で一元管理・平均も自動集計</div></div>
+        <div class="ps-row"><div class="from">生徒に連絡が届かない</div><div class="arr">→</div><div class="to">試験・行事・コメントが当日の画面に表示</div></div>
+        <div class="ps-row"><div class="from">担任がクラスを俯瞰できない</div><div class="arr">→</div><div class="to">担任には自クラス全授業の閲覧権限</div></div>
+        <div class="ps-row"><div class="from">教材の配布・受け取りが面倒</div><div class="arr">→</div><div class="to">授業にファイルを添付、生徒はその場でDL</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 · FEATURES -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">主要機能</div>
+      <h2>授業を中心にすべてがつながる</h2>
+      <p class="lead">1つの「授業（Lesson）」に、成績・出欠・連絡・教材・イベントがひも付きます。</p>
+      <div class="feat">
+        <div class="card"><div class="ico">割</div><h3>時間割</h3><p>週間テンプレート → 個別授業へ展開。教室・担当教員つき。</p></div>
+        <div class="card"><div class="ico">5</div><h3>成績</h3><p>5段階（2〜5）で授業ごとに記録。クラス平均を自動計算。</p></div>
+        <div class="card"><div class="ico">✓</div><h3>出欠</h3><p>出席・遅刻・欠席・公欠の4状態を色で管理。</p></div>
+        <div class="card"><div class="ico">話</div><h3>連絡・コメント</h3><p>教員→生徒のコメント、生徒→教員のメモ（双方向）。</p></div>
+        <div class="card"><div class="ico">📎</div><h3>教材ファイル</h3><p>授業に添付（最大10MB）。安全な保存と配布。</p></div>
+        <div class="card"><div class="ico">試</div><h3>イベント</h3><p>試験／アクティビティをクラスに通知。当日の画面に表示。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 · SCHEDULE GENERATION -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">仕組み①</div>
+      <h2>時間割の自動生成</h2>
+      <p class="lead">「毎週この時間にこの授業」という週間パターンを一度だけ定義。あとは期間を指定して展開します。</p>
+      <div class="flow">
+        <div class="step"><h3>① 週間テンプレート</h3><p>曜日・時刻・クラス・科目・教員・教室を1回だけ登録。</p></div>
+        <div class="go">→</div>
+        <div class="step"><h3>② 期間を指定して生成</h3><p>「◯月◯日〜◯日」を指定すると、該当曜日にだけ授業を作成。</p></div>
+        <div class="go">→</div>
+        <div class="step"><h3>③ 個別の授業</h3><p>成績・出欠・教材をひも付けられる実体に。</p></div>
+      </div>
+      <div class="callout">🔁 <b>冪等（べきとう）設計</b> — 同じ期間で何度実行しても、既存の授業は重複しません。運用中の「うっかり再実行」が安全。</div>
+    </div>
+  </section>
+
+  <!-- 8 · ACCESS CONTROL -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">仕組み②</div>
+      <h2>きめ細かなアクセス制御</h2>
+      <p class="lead">「誰がどの授業を編集できるか」を役割と関係性で判定。学校の実際の権限構造をそのまま反映します。</p>
+      <div class="tiers">
+        <div class="tier t1"><div class="h">管理者</div><div class="scope">すべての授業</div><p class="small muted" style="margin-top:.5rem">全クラスを閲覧・編集。マスターデータも管理。</p></div>
+        <div class="tier t2"><div class="h">教員</div><div class="scope">自分の担当授業</div><p class="small muted" style="margin-top:.5rem">自分が教える授業だけを編集。他は見えない。</p></div>
+        <div class="tier t3"><div class="h">担任</div><div class="scope">自クラスの全授業</div><p class="small muted" style="margin-top:.5rem">担当外でも、自クラスなら閲覧して俯瞰できる。</p></div>
+      </div>
+      <div class="callout">セキュリティは Spring Security による役割ベース制御に加え、<b>授業ごとの所属チェック</b>で二重に担保。</div>
+    </div>
+  </section>
+
+  <!-- 9 · UX PHILOSOPHY -->
+  <section class="slide dark">
+    <div class="slide-inner">
+      <div class="kicker">UX 設計思想</div>
+      <h2>なぜ、この形なのか</h2>
+      <p class="lead">機能を詰め込むのではなく、「その人がその瞬間にやりたいこと」を最短で。3つの原則で設計しています。</p>
+      <div class="grid g3" style="margin-top:1rem">
+        <div class="card" style="background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.2)"><div class="ico" style="background:rgba(255,255,255,.15); color:#eafff6">要</div><h3 style="color:#fff">必要なものだけ</h3><p style="color:#cfe4dc">役割ごとに画面を分離。ノイズも隠しメニューもない。</p></div>
+        <div class="card" style="background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.2)"><div class="ico" style="background:rgba(255,255,255,.15); color:#eafff6">階</div><h3 style="color:#fff">概要 → 詳細</h3><p style="color:#cfe4dc">まず全体像、必要な所だけ深掘り。クリックを最小に。</p></div>
+        <div class="card" style="background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.2)"><div class="ico" style="background:rgba(255,255,255,.15); color:#eafff6">完</div><h3 style="color:#fff">1画面で完結</h3><p style="color:#cfe4dc">1つの作業に必要な操作を、1ページにまとめる。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 · UX student drill-down -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">UX ① 生徒</div>
+      <h2>「週 → 日」のドリルダウン</h2>
+      <div class="two">
+        <div>
+          <p class="lead" style="margin-bottom:1rem">生徒はまず1週間の全体像を見て、気になる日だけを開く。詳細（成績・出欠・コメント・教材・メモ）は日ビューに集約。</p>
+          <ul class="clean">
+            <li><span class="num">週</span><div><b>週ビュー</b>：7日分をカードで一覧。今日は枠を強調、イベント数はバッジ表示。</div></li>
+            <li><span class="num">日</span><div><b>日ビュー</b>：授業ごとに成績・出欠・先生コメント・教材・自分のメモ。</div></li>
+          </ul>
+          <p class="small muted" style="margin-top:1rem"><b>なぜ？</b> 生徒の関心は「今日どうだったか」。概要から必要な日へ1クリックで、迷いなく深掘りできる。</p>
+        </div>
+        <div class="mock">
+          <div class="bar"><span class="dotr"></span> 火曜日 · 詳細</div>
+          <div class="body" style="display:flex; flex-direction:column; gap:.5rem">
+            <div class="lesson-card"><b>09:00–10:30　英語</b><br><span class="muted">田中先生 · 教室 203</span><br>成績 <span class="pill">5</span> ・ <span style="color:var(--present)">● 出席</span></div>
+            <div class="lesson-card"><b>10:40–12:10　理科</b><br><span class="muted">佐藤先生 · 教室 105</span><br>成績 <span class="pill">4</span> ・ <span style="color:var(--late)">● 遅刻</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 · UX teacher one screen -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">UX ② 教員</div>
+      <h2>「1授業 ＝ 1画面」ですべて</h2>
+      <div class="two">
+        <div>
+          <p class="lead" style="margin-bottom:1rem">授業ページを開けば、その授業に必要な操作がすべて縦に並ぶ。画面遷移ゼロで、成績も出欠もまとめて保存。</p>
+          <ul class="clean">
+            <li><span class="num">1</span><div><b>成績・出欠</b>：生徒一覧の表で入力し、一括で保存。</div></li>
+            <li><span class="num">2</span><div><b>生徒メモ</b>：生徒が「先生に共有」したメモを表示。</div></li>
+            <li><span class="num">3</span><div><b>コメント</b>：クラス全員に届く連絡を追記。</div></li>
+            <li><span class="num">4</span><div><b>ファイル</b>：教材を添付・配布。</div></li>
+            <li><span class="num">5</span><div><b>イベント</b>：試験・活動をその場で作成。</div></li>
+          </ul>
+          <p class="small muted" style="margin-top:1rem"><b>なぜ？</b> 授業運営中に画面を行き来させない。慣れた「表」の形で、摩擦なく記録できる。</p>
+        </div>
+        <div class="mock">
+          <div class="bar"><span class="dotr"></span> 数学 · 1年A組</div>
+          <div class="body">
+            <table style="width:100%; border-collapse:collapse; font-size:.8rem">
+              <tr style="color:var(--muted); font-size:.72rem"><td style="padding:.3rem 0">生徒</td><td>成績</td><td>出欠</td></tr>
+              <tr style="border-top:1px solid var(--line)"><td style="padding:.4rem 0">山田 太郎</td><td><span class="pill">5</span></td><td style="color:var(--present)">出席</td></tr>
+              <tr style="border-top:1px solid var(--line)"><td style="padding:.4rem 0">鈴木 花子</td><td><span class="pill">4</span></td><td style="color:var(--absent)">欠席</td></tr>
+              <tr style="border-top:1px solid var(--line)"><td style="padding:.4rem 0">高橋 健</td><td><span class="pill">3</span></td><td style="color:var(--late)">遅刻</td></tr>
+            </table>
+            <div style="margin-top:.6rem; text-align:right"><span style="background:var(--accent); color:#fff; border-radius:8px; padding:.25rem .8rem; font-size:.78rem">保存</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 · UX color -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">UX ③ 情報の見せ方</div>
+      <h2>色で「一目」でわかる出欠</h2>
+      <p class="lead">文字を読む前に、色で状態を把握できる。4つの状態それぞれに専用色を割り当て、週の一覧でもパッと目に入ります。</p>
+      <div class="att">
+        <div class="a"><span class="dot d-present"></span><div class="lab">出席</div><div class="en">PRESENT</div></div>
+        <div class="a"><span class="dot d-late"></span><div class="lab">遅刻</div><div class="en">LATE</div></div>
+        <div class="a"><span class="dot d-absent"></span><div class="lab">欠席</div><div class="en">ABSENT</div></div>
+        <div class="a"><span class="dot d-excused"></span><div class="lab">公欠</div><div class="en">EXCUSED</div></div>
+      </div>
+      <p class="small muted" style="margin-top:1.4rem"><b>なぜ？</b> 成績のピル、イベントのバッジ（試験＝赤系／活動＝橙系）も同じ考え方。色は「装飾」ではなく「最速の情報」。</p>
+    </div>
+  </section>
+
+  <!-- 13 · UX visual / JP-first -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">UX ④ ビジュアルと言語</div>
+      <h2>落ち着いた「紙」の質感、日本語ファースト</h2>
+      <div class="two">
+        <div>
+          <p class="lead" style="margin-bottom:.6rem">毎日使う道具だからこそ、派手さより「学びの場」にふさわしい静けさを。温かい紙色の背景に、明朝体の見出し。</p>
+          <div class="sw">
+            <span style="background:#f5f1e8" data-c="紙 #f5f1e8"></span>
+            <span style="background:#2a2723" data-c="墨 #2a2723"></span>
+            <span style="background:#145a4c" data-c="緑 #145a4c"></span>
+            <span style="background:#e4efe9" data-c="淡緑"></span>
+          </div>
+          <ul class="clean" style="margin-top:1.6rem">
+            <li><span class="num">語</span><div><b>デフォルトは日本語</b>。日本語・English・Русский を1クリック切替。</div></li>
+            <li><span class="num">和</span><div><b>日本の学校の言葉</b>：「1年A組」「担任」「出欠・公欠」をそのまま。</div></li>
+            <li><span class="num">応</span><div><b>レスポンシブ</b>：カードは自動で折り返し、スマホでも読める。</div></li>
+          </ul>
+        </div>
+        <div class="mock">
+          <div class="bar"><span class="dotr"></span> 学級日誌　<span style="margin-left:auto; font-family:var(--sans); font-size:.72rem; color:var(--muted)">日本語 · EN · RU</span></div>
+          <div class="body">
+            <div style="font-family:var(--serif); font-size:1.1rem; margin-bottom:.4rem">1年A組 — 今週</div>
+            <div class="wk">
+              <div class="d"><b>月</b><div class="ln">数学 / 歴史</div></div>
+              <div class="d today"><b>火</b><div class="ln">英語 / 理科</div></div>
+              <div class="d"><b>水</b><div class="ln">国語</div></div>
+            </div>
+            <div style="margin-top:.5rem; font-size:.7rem"><span style="background:#f7e0dd; color:#8c2f27; border-radius:6px; padding:.1rem .5rem">試験</span> <span style="background:#fbeede; color:#8a5a12; border-radius:6px; padding:.1rem .5rem">アクティビティ</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 14 · UX safety / onboarding -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">UX ⑤ 安心して運用できる</div>
+      <h2>迷わせない・壊させない</h2>
+      <p class="lead">初めての管理者でも迷わず立ち上げられ、危険な操作は事前に防ぐ。運用の「こわさ」を設計で取り除きます。</p>
+      <div class="grid g2">
+        <div class="card"><div class="ico">順</div><h3>4ステップの手順ガイド</h3><p>ダッシュボードに「クラス→科目→時間割→生成」の順序を明示。</p></div>
+        <div class="card"><div class="ico">試</div><h3>デモ用ログインを表示</h3><p>ログイン画面に各役割の体験用アカウントを掲示。すぐ試せる。</p></div>
+        <div class="card"><div class="ico">守</div><h3>参照チェック付き削除</h3><p>授業や生徒に使われているクラス・科目は削除をブロック。</p></div>
+        <div class="card"><div class="ico">確</div><h3>操作の確認と再送防止</h3><p>削除は確認ダイアログ、保存後はリダイレクトで二重送信を防止。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 15 · TECH -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">技術基盤</div>
+      <h2>堅実なサーバーレンダリング構成</h2>
+      <p class="lead">枯れた・信頼性の高い技術で構築。特別なフロントエンド環境がなくても、ブラウザだけで動作します。</p>
+      <div class="tech" style="margin-bottom:1.4rem">
+        <span>Spring Boot 3.2</span><span>Spring Security</span><span>Thymeleaf</span>
+        <span>Spring Data JPA / Hibernate</span><span>PostgreSQL</span><span>Java 17</span>
+      </div>
+      <div class="grid g3">
+        <div class="card"><h3>役割ベース認証</h3><p>BCrypt・セッション管理・URL単位＋授業単位の権限。</p></div>
+        <div class="card"><h3>サービス層で分離</h3><p>時間割生成・ファイル保存・権限判定を独立したサービスに。</p></div>
+        <div class="card"><h3>i18n は標準機能</h3><p>後付けではなく、メッセージファイルで多言語を内蔵。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 16 · CONCLUSION -->
+  <section class="slide dark">
+    <div class="slide-inner">
+      <div class="kicker">まとめ</div>
+      <h2>学校の情報を、1つに。<br>役割ごとに、最適な形で。</h2>
+      <p class="lead" style="margin-top:1rem">散らばっていた時間割・成績・出欠・連絡・教材を「学級日誌」に集約。<br>
+      それぞれの役割が必要なものだけを、日本の学校の言葉と落ち着いた画面で扱えます。</p>
+      <div class="title-tags" style="margin-top:1.2rem">
+        <span class="tag">自動生成で手間を削減</span>
+        <span class="tag">1画面で完結する運用</span>
+        <span class="tag">色と概要→詳細で直感的</span>
+        <span class="tag">日本語ファースト</span>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="hud"><div class="fill" id="fill"></div></div>
+<div class="counter" id="counter">1 / 16</div>
+<div class="hint">← → / Space でスライド移動</div>
+
+<script>
+  const deck=document.getElementById('deck');
+  const slides=[...document.querySelectorAll('.slide')];
+  const fill=document.getElementById('fill');
+  const counter=document.getElementById('counter');
+  function current(){
+    let i=Math.round(deck.scrollTop/window.innerHeight);
+    return Math.max(0,Math.min(slides.length-1,i));
+  }
+  function update(){
+    const i=current();
+    counter.textContent=(i+1)+' / '+slides.length;
+    fill.style.width=((i)/(slides.length-1)*100)+'%';
+  }
+  function go(n){
+    const i=Math.max(0,Math.min(slides.length-1,current()+n));
+    deck.scrollTo({top:i*window.innerHeight,behavior:'smooth'});
+  }
+  deck.addEventListener('scroll',update,{passive:true});
+  window.addEventListener('resize',update);
+  document.addEventListener('keydown',e=>{
+    if(['ArrowRight','ArrowDown','PageDown',' '].includes(e.key)){e.preventDefault();go(1);}
+    else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();go(-1);}
+    else if(e.key==='Home'){deck.scrollTo({top:0,behavior:'smooth'});}
+    else if(e.key==='End'){deck.scrollTo({top:slides.length*window.innerHeight,behavior:'smooth'});}
+  });
+  update();
+</script>

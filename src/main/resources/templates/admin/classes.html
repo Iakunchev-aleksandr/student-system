@@ -11,12 +11,14 @@
         <table>
             <thead><tr>
                 <th th:text="#{classes.colName}">Название</th>
+                <th th:text="#{classes.colCourse}">Курс</th>
                 <th th:text="#{classes.colSupervisor}">Классный руководитель</th>
                 <th th:text="#{common.actions}">Действия</th>
             </tr></thead>
             <tbody>
             <tr th:each="c : ${classes}">
                 <td th:text="${c.name}">1年A組</td>
+                <td th:text="${c.course != null ? c.course.name : '—'}">—</td>
                 <td th:text="${c.supervisor != null ? c.supervisor.fullName : '—'}">—</td>
                 <td>
                     <div class="actions">
@@ -41,6 +43,12 @@
                 <label><span th:text="#{classes.groupCode}">Код группы</span>
                     <input type="text" name="groupCode" required placeholder="A"></label>
             </div>
+            <label><span th:text="#{classes.course}">Курс</span>
+                <select name="courseId" required>
+                    <option value="" th:text="#{classes.selectCourse}">— выберите курс —</option>
+                    <option th:each="co : ${courses}" th:value="${co.id}" th:text="${co.name}"></option>
+                </select>
+            </label>
             <label><span th:text="#{classes.supervisor}">Классный руководитель</span>
                 <select name="supervisorId">
                     <option value="" th:text="#{classes.assignLater}">— назначить позже —</option>

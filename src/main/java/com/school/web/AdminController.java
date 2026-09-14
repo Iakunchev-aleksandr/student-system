@@ -17,9 +17,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.temporal.TemporalAdjusters;
-import java.util.ArrayList;
-import java.util.List;
 
 @Controller
 @RequestMapping("/admin")
@@ -36,6 +33,9 @@ public class AdminController {
     private final TeacherCommentRepository comments;
     private final SchoolEventRepository events;
     private final FileAttachmentRepository files;
+    private final CourseRepository courses;
+    private final HolidayRepository holidays;
+    private final DayOverrideRepository dayOverrides;
     private final ScheduleGenerationService scheduleGen;
     private final FileStorageService storage;
     private final PasswordEncoder encoder;
@@ -44,7 +44,8 @@ public class AdminController {
                            ScheduleTemplateRepository templates, LessonRepository lessons, GradeRepository grades,
                            AttendanceRepository attendance, StudentNoteRepository notes,
                            TeacherCommentRepository comments, SchoolEventRepository events,
-                           FileAttachmentRepository files, ScheduleGenerationService scheduleGen,
+                           FileAttachmentRepository files, CourseRepository courses, HolidayRepository holidays,
+                           DayOverrideRepository dayOverrides, ScheduleGenerationService scheduleGen,
                            FileStorageService storage, PasswordEncoder encoder) {
         this.users = users;
         this.classes = classes;
@@ -57,6 +58,9 @@ public class AdminController {
         this.comments = comments;
         this.events = events;
         this.files = files;
+        this.courses = courses;
+        this.holidays = holidays;
+        this.dayOverrides = dayOverrides;
         this.scheduleGen = scheduleGen;
         this.storage = storage;
         this.encoder = encoder;
@@ -65,9 +69,11 @@ public class AdminController {
     @GetMapping
     public String dashboard(Model model) {
         model.addAttribute("userCount", users.count());
+        model.addAttribute("courseCount", courses.count());
         model.addAttribute("classCount", classes.count());
         model.addAttribute("subjectCount", subjects.count());
         model.addAttribute("templateCount", templates.count());
+        model.addAttribute("calendarCount", holidays.count() + dayOverrides.count());
         return "admin/dashboard";
     }
 
@@ -212,19 +218,27 @@ public class AdminController {
     public String classes(Model model) {
         model.addAttribute("classes", classes.findAllByOrderByStudyYearAscGroupCodeAsc());
         model.addAttribute("teachers", users.findByRoleOrderByLastNameAscFirstNameAsc(Role.TEACHER));
+        model.addAttribute("courses", courses.findAllByOrderByOrderIndexAscNameAsc());
         return "admin/classes";
     }
 
     @PostMapping("/classes")
     public String createClass(@RequestParam Integer studyYear, @RequestParam String groupCode,
+                              @RequestParam Long courseId,
                               @RequestParam(required = false) Long supervisorId, RedirectAttributes ra) {
         if (classes.existsByStudyYearAndGroupCode(studyYear, groupCode)) {
             ra.addFlashAttribute("error", "Такая группа уже существует");
             return "redirect:/admin/classes";
         }
+        Course course = courses.findById(courseId).orElse(null);
+        if (course == null) {
+            ra.addFlashAttribute("error", "Выберите курс");
+            return "redirect:/admin/classes";
+        }
         SchoolClass c = new SchoolClass();
         c.setStudyYear(studyYear);
         c.setGroupCode(groupCode);
+        c.setCourse(course);
         if (supervisorId != null) {
             c.setSupervisor(users.findById(supervisorId).orElse(null));
         }
@@ -238,20 +252,28 @@ public class AdminController {
         SchoolClass c = classes.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         model.addAttribute("editClass", c);
         model.addAttribute("teachers", users.findByRoleOrderByLastNameAscFirstNameAsc(Role.TEACHER));
+        model.addAttribute("courses", courses.findAllByOrderByOrderIndexAscNameAsc());
         return "admin/class-edit";
     }
 
     @PostMapping("/classes/{id}")
     public String updateClass(@PathVariable Long id, @RequestParam Integer studyYear,
-                              @RequestParam String groupCode, @RequestParam(required = false) Long supervisorId,
+                              @RequestParam String groupCode, @RequestParam Long courseId,
+                              @RequestParam(required = false) Long supervisorId,
                               RedirectAttributes ra) {
         SchoolClass c = classes.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (classes.existsByStudyYearAndGroupCodeAndIdNot(studyYear, groupCode, id)) {
             ra.addFlashAttribute("error", "Такая группа уже существует");
             return "redirect:/admin/classes/" + id + "/edit";
         }
+        Course course = courses.findById(courseId).orElse(null);
+        if (course == null) {
+            ra.addFlashAttribute("error", "Выберите курс");
+            return "redirect:/admin/classes/" + id + "/edit";
+        }
         c.setStudyYear(studyYear);
         c.setGroupCode(groupCode);
+        c.setCourse(course);
         c.setSupervisor(supervisorId != null ? users.findById(supervisorId).orElse(null) : null);
         classes.save(c);
         ra.addFlashAttribute("message", "Изменения сохранены");
@@ -278,6 +300,139 @@ public class AdminController {
         classes.delete(c);
         ra.addFlashAttribute("message", "Группа удалена");
         return "redirect:/admin/classes";
+    }
+
+    // ===================== Курсы =====================
+
+    @GetMapping("/courses")
+    public String courses(Model model) {
+        model.addAttribute("courses", courses.findAllByOrderByOrderIndexAscNameAsc());
+        return "admin/courses";
+    }
+
+    @PostMapping("/courses")
+    public String createCourse(@RequestParam String name, @RequestParam(defaultValue = "0") int orderIndex,
+                               RedirectAttributes ra) {
+        if (name == null || name.isBlank()) {
+            ra.addFlashAttribute("error", "Название обязательно");
+            return "redirect:/admin/courses";
+        }
+        if (courses.existsByName(name.trim())) {
+            ra.addFlashAttribute("error", "Такой курс уже есть");
+            return "redirect:/admin/courses";
+        }
+        Course c = new Course();
+        c.setName(name.trim());
+        c.setOrderIndex(orderIndex);
+        courses.save(c);
+        ra.addFlashAttribute("message", "Курс добавлен");
+        return "redirect:/admin/courses";
+    }
+
+    @PostMapping("/courses/{id}")
+    public String updateCourse(@PathVariable Long id, @RequestParam String name,
+                               @RequestParam(defaultValue = "0") int orderIndex, RedirectAttributes ra) {
+        Course c = courses.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (name == null || name.isBlank()) {
+            ra.addFlashAttribute("error", "Название обязательно");
+            return "redirect:/admin/courses";
+        }
+        if (courses.existsByNameAndIdNot(name.trim(), id)) {
+            ra.addFlashAttribute("error", "Такой курс уже есть");
+            return "redirect:/admin/courses";
+        }
+        c.setName(name.trim());
+        c.setOrderIndex(orderIndex);
+        courses.save(c);
+        ra.addFlashAttribute("message", "Изменения сохранены");
+        return "redirect:/admin/courses";
+    }
+
+    @PostMapping("/courses/{id}/delete")
+    public String deleteCourse(@PathVariable Long id, RedirectAttributes ra) {
+        Course c = courses.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (classes.existsByCourse(c) || holidays.existsByCourse(c) || dayOverrides.existsByCourse(c)) {
+            ra.addFlashAttribute("error", "Нельзя удалить: к курсу привязаны группы, каникулы или замены");
+            return "redirect:/admin/courses";
+        }
+        courses.delete(c);
+        ra.addFlashAttribute("message", "Курс удалён");
+        return "redirect:/admin/courses";
+    }
+
+    // ===================== Каникулы и замены дней =====================
+
+    @GetMapping("/calendar")
+    public String calendar(Model model) {
+        model.addAttribute("holidays", holidays.findAllByOrderByStartDateAsc());
+        model.addAttribute("dayOverrides", dayOverrides.findAllByOrderByDateAsc());
+        model.addAttribute("courses", courses.findAllByOrderByOrderIndexAscNameAsc());
+        model.addAttribute("classes", classes.findAllByOrderByStudyYearAscGroupCodeAsc());
+        model.addAttribute("days", DayOfWeek.values());
+        return "admin/calendar";
+    }
+
+    @PostMapping("/calendar/holidays")
+    public String createHoliday(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                                @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                                @RequestParam(required = false) String title,
+                                @RequestParam(required = false) Long courseId,
+                                @RequestParam(required = false) Long schoolClassId, RedirectAttributes ra) {
+        if (endDate.isBefore(startDate)) {
+            ra.addFlashAttribute("error", "Дата окончания раньше начала");
+            return "redirect:/admin/calendar";
+        }
+        Holiday h = new Holiday();
+        h.setStartDate(startDate);
+        h.setEndDate(endDate);
+        h.setTitle(title);
+        applyScope(h::setCourse, h::setSchoolClass, courseId, schoolClassId);
+        holidays.save(h);
+        ra.addFlashAttribute("message", "Каникулы добавлены");
+        return "redirect:/admin/calendar";
+    }
+
+    @PostMapping("/calendar/holidays/{id}/delete")
+    public String deleteHoliday(@PathVariable Long id, RedirectAttributes ra) {
+        holidays.deleteById(id);
+        ra.addFlashAttribute("message", "Каникулы удалены");
+        return "redirect:/admin/calendar";
+    }
+
+    @PostMapping("/calendar/day-overrides")
+    public String createDayOverride(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                                    @RequestParam DayOfWeek substituteDayOfWeek,
+                                    @RequestParam(required = false) String title,
+                                    @RequestParam(required = false) Long courseId,
+                                    @RequestParam(required = false) Long schoolClassId, RedirectAttributes ra) {
+        DayOverride o = new DayOverride();
+        o.setDate(date);
+        o.setSubstituteDayOfWeek(substituteDayOfWeek);
+        o.setTitle(title);
+        applyScope(o::setCourse, o::setSchoolClass, courseId, schoolClassId);
+        dayOverrides.save(o);
+        ra.addFlashAttribute("message", "Замена дня добавлена");
+        return "redirect:/admin/calendar";
+    }
+
+    @PostMapping("/calendar/day-overrides/{id}/delete")
+    public String deleteDayOverride(@PathVariable Long id, RedirectAttributes ra) {
+        dayOverrides.deleteById(id);
+        ra.addFlashAttribute("message", "Замена дня удалена");
+        return "redirect:/admin/calendar";
+    }
+
+    // Устанавливает область: группа важнее курса; если задана группа — курс игнорируется.
+    private void applyScope(java.util.function.Consumer<Course> setCourse,
+                            java.util.function.Consumer<SchoolClass> setClass,
+                            Long courseId, Long schoolClassId) {
+        if (schoolClassId != null) {
+            setClass.accept(classes.findById(schoolClassId).orElse(null));
+            setCourse.accept(null);
+        } else if (courseId != null) {
+            setCourse.accept(courses.findById(courseId).orElse(null));
+            setClass.accept(null);
+        }
     }
 
     // ===================== Предметы =====================
@@ -435,35 +590,11 @@ public class AdminController {
         return "admin/generate";
     }
 
-    // ===================== Журнал (доступ админа к урокам) =====================
+    // ===================== Журнал (заменён вкладкой «Группы») =====================
 
     @GetMapping("/journal")
-    public String journal(@RequestParam(required = false) Long classId,
-                          @RequestParam(defaultValue = "0") int week, Model model) {
-        LocalDate monday = LocalDate.now()
-                .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-                .plusWeeks(week);
-        LocalDate sunday = monday.plusDays(6);
-
-        List<WeekDay> days = new ArrayList<>();
-        SchoolClass clazz = classId == null ? null : classes.findById(classId).orElse(null);
-        if (clazz != null) {
-            List<Lesson> weekLessons = lessons
-                    .findBySchoolClassAndDateBetweenOrderByDateAscStartTimeAsc(clazz, monday, sunday);
-            for (int i = 0; i < 7; i++) {
-                LocalDate d = monday.plusDays(i);
-                days.add(new WeekDay(d, weekLessons.stream().filter(l -> l.getDate().equals(d)).toList(), 0));
-            }
-        }
-
-        model.addAttribute("classes", classes.findAllByOrderByStudyYearAscGroupCodeAsc());
-        model.addAttribute("selectedClassId", classId);
-        model.addAttribute("clazz", clazz);
-        model.addAttribute("days", days);
-        model.addAttribute("week", week);
-        model.addAttribute("monday", monday);
-        model.addAttribute("sunday", sunday);
-        return "admin/journal";
+    public String journal() {
+        return "redirect:/groups";
     }
 
     // ===================== Вспомогательное =====================

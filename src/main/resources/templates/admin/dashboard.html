@@ -9,17 +9,20 @@
 
     <div class="grid-days">
         <div class="day"><h3 th:text="#{adminDashboard.users}">Пользователи</h3><p class="muted" th:text="#{adminDashboard.usersCount(${userCount})}"></p><a th:href="@{/admin/users}" th:text="#{adminDashboard.manage}">Управлять →</a></div>
+        <div class="day"><h3 th:text="#{adminDashboard.courses}">Курсы</h3><p class="muted" th:text="#{adminDashboard.coursesCount(${courseCount})}"></p><a th:href="@{/admin/courses}" th:text="#{adminDashboard.manage}">Управлять →</a></div>
         <div class="day"><h3 th:text="#{adminDashboard.classes}">Группы</h3><p class="muted" th:text="#{adminDashboard.classesCount(${classCount})}"></p><a th:href="@{/admin/classes}" th:text="#{adminDashboard.manage}">Управлять →</a></div>
         <div class="day"><h3 th:text="#{adminDashboard.subjects}">Предметы</h3><p class="muted" th:text="#{adminDashboard.subjectsCount(${subjectCount})}"></p><a th:href="@{/admin/subjects}" th:text="#{adminDashboard.manage}">Управлять →</a></div>
         <div class="day"><h3 th:text="#{adminDashboard.templates}">Шаблон расписания</h3><p class="muted" th:text="#{adminDashboard.templatesCount(${templateCount})}"></p><a th:href="@{/admin/schedule}" th:text="#{adminDashboard.manage}">Управлять →</a></div>
+        <div class="day"><h3 th:text="#{adminDashboard.calendar}">Каникулы и замены</h3><p class="muted" th:text="#{adminDashboard.calendarCount(${calendarCount})}"></p><a th:href="@{/admin/calendar}" th:text="#{adminDashboard.manage}">Управлять →</a></div>
     </div>
 
     <div class="card">
         <h3 th:text="#{adminDashboard.howTitle}">Как собрать расписание</h3>
         <ol class="muted">
-            <li th:text="#{adminDashboard.how1}">Создай группы и назначь им классных руководителей.</li>
+            <li th:text="#{adminDashboard.how1}">Создай курсы, группы и назначь им классных руководителей.</li>
             <li th:text="#{adminDashboard.how2}">Добавь предметы и преподавателей.</li>
             <li th:text="#{adminDashboard.how3}">На странице «Расписание» собери недельный шаблон (повторяющиеся слоты).</li>
+            <li th:text="#{adminDashboard.how5}">При необходимости задай каникулы и замены дней.</li>
             <li th:text="#{adminDashboard.how4}">На странице «Генерация» разверни шаблон в конкретные уроки на период.</li>
         </ol>
     </div>

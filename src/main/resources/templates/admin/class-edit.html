@@ -16,6 +16,13 @@
                 <label><span th:text="#{classes.groupCode}">Код группы</span>
                     <input type="text" name="groupCode" th:value="${editClass.groupCode}" required></label>
             </div>
+            <label><span th:text="#{classes.course}">Курс</span>
+                <select name="courseId" required>
+                    <option value="" th:text="#{classes.selectCourse}">— выберите курс —</option>
+                    <option th:each="co : ${courses}" th:value="${co.id}" th:text="${co.name}"
+                            th:selected="${editClass.course != null and editClass.course.id == co.id}"></option>
+                </select>
+            </label>
             <label><span th:text="#{classes.supervisor}">Классный руководитель</span>
                 <select name="supervisorId">
                     <option value="" th:text="#{common.none}">— нет —</option>

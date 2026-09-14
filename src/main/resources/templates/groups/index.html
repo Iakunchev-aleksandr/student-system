@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head(#{page.groups})}"></head>
+<body>
+<header th:replace="~{fragments/common :: topbar}"></header>
+<div class="container">
+    <h1 th:text="#{groups.heading}">Группы</h1>
+
+    <p class="tabs-empty" th:if="${courseTabs.isEmpty()}" th:text="#{groups.empty}">
+        Пока нет доступных групп.
+    </p>
+
+    <div th:unless="${courseTabs.isEmpty()}">
+        <!-- Вкладки курсов -->
+        <div class="tabs courses">
+            <a th:each="c : ${courseTabs}" class="tab"
+               th:classappend="${selectedCourse != null and selectedCourse.id == c.id} ? ' active' : ''"
+               th:href="@{/groups(courseId=${c.id},week=${week})}"
+               th:text="${c.name}">Курс</a>
+        </div>
+
+        <!-- Вкладки групп выбранного курса -->
+        <p class="tabs-empty" th:if="${groupTabs.isEmpty()}" th:text="#{groups.noGroups}">
+            В этом курсе нет доступных групп.
+        </p>
+        <div class="tabs groups" th:unless="${groupTabs.isEmpty()}">
+            <a th:each="g : ${groupTabs}" class="tab"
+               th:classappend="${selectedClass != null and selectedClass.id == g.id} ? ' active' : ''"
+               th:href="@{/groups(courseId=${selectedCourse.id},classId=${g.id},week=${week})}"
+               th:text="${g.name}">Группа</a>
+        </div>
+
+        <div th:if="${selectedClass != null}">
+            <div class="week-nav">
+                <a class="btn tiny secondary"
+                   th:href="@{/groups(courseId=${selectedCourse.id},classId=${selectedClass.id},week=${week - 1})}"
+                   th:text="#{week.prev}">← Предыдущая</a>
+                <span class="muted" th:text="${#temporals.format(monday,'dd.MM')} + ' — ' + ${#temporals.format(sunday,'dd.MM.yyyy')}"></span>
+                <a class="btn tiny secondary"
+                   th:href="@{/groups(courseId=${selectedCourse.id},classId=${selectedClass.id},week=${week + 1})}"
+                   th:text="#{week.next}">Следующая →</a>
+                <a class="btn tiny secondary" th:if="${week != 0}"
+                   th:href="@{/groups(courseId=${selectedCourse.id},classId=${selectedClass.id})}"
+                   th:text="#{week.current}">Текущая</a>
+            </div>
+
+            <p class="muted small" th:unless="${full}" th:text="#{groups.ownOnly}">
+                Показаны только ваши занятия у этой группы.
+            </p>
+
+            <div class="grid-days">
+                <div class="day" th:each="d : ${days}" th:classappend="${d.today} ? ' today' : ''">
+                    <h3>
+                        <span th:text="#{'day.' + ${d.date.dayOfWeek.name()}}">День</span>
+                        <span class="date" th:text="${#temporals.format(d.date,'dd.MM')}"></span>
+                    </h3>
+                    <p class="muted small" th:if="${d.lessons.isEmpty()}" th:text="#{day.none}">Нет занятий</p>
+                    <div class="lesson-line" th:each="l : ${d.lessons}">
+                        <span class="time" th:text="${#temporals.format(l.startTime,'HH:mm')}"></span>
+                        <a th:href="@{/teacher/lesson/{id}(id=${l.id})}" th:text="${l.subject.name}">Предмет</a>
+                        <span class="muted small" th:text="' · ' + ${l.teacher.fullName}"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Сводка оценок (полный режим: админ или классный руководитель) -->
+            <div class="card" th:if="${full}">
+                <h3 th:text="#{groups.grades}">Оценки за неделю</h3>
+                <p class="muted small" th:if="${gradeLessons.isEmpty()}" th:text="#{groups.noGrades}">Оценок за эту неделю пока нет.</p>
+                <div th:unless="${gradeLessons.isEmpty()}" style="overflow-x:auto">
+                    <table class="grades-table">
+                        <thead>
+                        <tr>
+                            <th th:text="#{groups.studentCol}">Студент</th>
+                            <th th:each="l : ${gradeLessons}">
+                                <span th:text="${l.subject.name}">Предмет</span><br>
+                                <span class="muted small" th:text="${#temporals.format(l.date,'dd.MM')}"></span>
+                            </th>
+                            <th th:text="#{groups.average}">Средний балл</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="row : ${gradeRows}">
+                            <td th:text="${row.student.fullName}">ФИО</td>
+                            <td th:each="g : ${row.grades}">
+                                <span th:if="${g != null}" class="pill grade" th:text="${g}">5</span>
+                                <span th:if="${g == null}" class="muted">·</span>
+                            </td>
+                            <td th:text="${row.average != null ? row.average : '—'}">—</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

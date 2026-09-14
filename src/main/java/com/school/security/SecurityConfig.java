@@ -25,7 +25,7 @@ public class SecurityConfig {
             for (GrantedAuthority a : authentication.getAuthorities()) {
                 String role = a.getAuthority();
                 if (role.equals("ROLE_ADMIN")) { target = "/admin"; break; }
-                if (role.equals("ROLE_TEACHER")) { target = "/teacher"; break; }
+                if (role.equals("ROLE_TEACHER")) { target = "/groups"; break; }
             }
             response.sendRedirect(request.getContextPath() + target);
         };
@@ -37,6 +37,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/login", "/css/**", "/error").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
+                // Единая вкладка «Группы» — для преподавателей и админа.
+                .requestMatchers("/groups/**").hasAnyRole("TEACHER", "ADMIN")
                 // Администратор имеет полный доступ, поэтому допускается и к страницам урока преподавателя.
                 .requestMatchers("/teacher/**").hasAnyRole("TEACHER", "ADMIN")
                 .requestMatchers("/student/**").hasRole("STUDENT")

@@ -7,6 +7,8 @@
     <h1 th:text="#{generate.heading}">Генерация уроков</h1>
     <p class="muted" th:text="#{generate.desc}">Разворачивает недельный шаблон в конкретные датированные уроки за период. Повторный запуск безопасен — уже существующие уроки пропускаются.</p>
 
+    <p class="muted small" th:text="#{generate.hint}">Совет: сначала задайте каникулы и замены дней — они учитываются только при генерации и не меняют уже созданные уроки.</p>
+
     <div class="notice" th:if="${created != null}" th:text="#{generate.created(${created})}"></div>
 
     <div class="card">

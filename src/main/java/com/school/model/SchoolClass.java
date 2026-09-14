@@ -23,6 +23,11 @@ public class SchoolClass {
     @JoinColumn(name = "supervisor_id")
     private AppUser supervisor;
 
+    // Курс, к которому относится группа (Business / IT / Hotel Management).
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "course_id")
+    private Course course;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -40,4 +45,7 @@ public class SchoolClass {
 
     public AppUser getSupervisor() { return supervisor; }
     public void setSupervisor(AppUser supervisor) { this.supervisor = supervisor; }
+
+    public Course getCourse() { return course; }
+    public void setCourse(Course course) { this.course = course; }
 }

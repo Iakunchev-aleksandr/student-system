@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head(#{page.calendar})}"></head>
+<body>
+<header th:replace="~{fragments/common :: topbar}"></header>
+<div class="container">
+    <h1 th:text="#{calendar.heading}">Каникулы и замены дней</h1>
+    <p class="muted" th:text="#{calendar.desc}">Задайте каникулы и замены дней до генерации уроков. На уже созданные уроки они не влияют.</p>
+    <div th:replace="~{fragments/common :: flash}"></div>
+
+    <!-- ================= Каникулы ================= -->
+    <div class="card">
+        <h3 th:text="#{calendar.holidays}">Каникулы</h3>
+        <p class="muted small" th:if="${holidays.isEmpty()}" th:text="#{calendar.noHolidays}">Каникул пока нет.</p>
+        <table th:unless="${holidays.isEmpty()}">
+            <thead><tr>
+                <th th:text="#{calendar.period}">Период</th>
+                <th th:text="#{calendar.scope}">Область</th>
+                <th th:text="#{calendar.title}">Название</th>
+                <th style="text-align:right" th:text="#{common.actions}">Действия</th>
+            </tr></thead>
+            <tbody>
+            <tr th:each="h : ${holidays}">
+                <td th:text="${#temporals.format(h.startDate,'dd.MM.yyyy')} + ' — ' + ${#temporals.format(h.endDate,'dd.MM.yyyy')}"></td>
+                <td th:text="${h.schoolClass != null ? h.schoolClass.name : (h.course != null ? h.course.name : #{calendar.scopeGlobal})}"></td>
+                <td class="muted" th:text="${h.title}"></td>
+                <td style="text-align:right">
+                    <form th:action="@{/admin/calendar/holidays/{id}/delete(id=${h.id})}" method="post" style="margin:0"
+                          th:attr="data-msg=#{common.confirmDelete}" onsubmit="return confirm(this.dataset.msg)">
+                        <button class="btn tiny secondary" type="submit" th:text="#{action.delete}">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+
+        <h3 style="margin-top:1.2rem" th:text="#{calendar.newHoliday}">Новые каникулы</h3>
+        <form th:action="@{/admin/calendar/holidays}" method="post">
+            <div class="row">
+                <label><span th:text="#{calendar.from}">С</span><input type="date" name="startDate" required></label>
+                <label><span th:text="#{calendar.to}">По</span><input type="date" name="endDate" required></label>
+            </div>
+            <label><span th:text="#{calendar.title}">Название</span><input type="text" name="title"></label>
+            <div class="row">
+                <label><span th:text="#{calendar.course}">Курс (необязательно)</span>
+                    <select name="courseId">
+                        <option value="" th:text="#{calendar.scopeGlobal}">— все —</option>
+                        <option th:each="c : ${courses}" th:value="${c.id}" th:text="${c.name}"></option>
+                    </select>
+                </label>
+                <label><span th:text="#{calendar.group}">Группа (необязательно)</span>
+                    <select name="schoolClassId">
+                        <option value="" th:text="#{common.none}">— нет —</option>
+                        <option th:each="c : ${classes}" th:value="${c.id}" th:text="${c.name}"></option>
+                    </select>
+                </label>
+            </div>
+            <p class="muted small" th:text="#{calendar.scopeHint}">Если выбрана группа — применяется к ней; иначе к курсу; иначе ко всем.</p>
+            <button class="btn" type="submit" th:text="#{action.add}">Добавить</button>
+        </form>
+    </div>
+
+    <!-- ================= Замены дней ================= -->
+    <div class="card">
+        <h3 th:text="#{calendar.overrides}">Замены дней (振替)</h3>
+        <p class="muted small" th:if="${dayOverrides.isEmpty()}" th:text="#{calendar.noOverrides}">Замен пока нет.</p>
+        <table th:unless="${dayOverrides.isEmpty()}">
+            <thead><tr>
+                <th th:text="#{calendar.date}">Дата</th>
+                <th th:text="#{calendar.substitute}">Расписание дня</th>
+                <th th:text="#{calendar.scope}">Область</th>
+                <th th:text="#{calendar.title}">Название</th>
+                <th style="text-align:right" th:text="#{common.actions}">Действия</th>
+            </tr></thead>
+            <tbody>
+            <tr th:each="o : ${dayOverrides}">
+                <td th:text="${#temporals.format(o.date,'dd.MM.yyyy')}"></td>
+                <td th:text="#{'day.' + ${o.substituteDayOfWeek.name()}}"></td>
+                <td th:text="${o.schoolClass != null ? o.schoolClass.name : (o.course != null ? o.course.name : #{calendar.scopeGlobal})}"></td>
+                <td class="muted" th:text="${o.title}"></td>
+                <td style="text-align:right">
+                    <form th:action="@{/admin/calendar/day-overrides/{id}/delete(id=${o.id})}" method="post" style="margin:0"
+                          th:attr="data-msg=#{common.confirmDelete}" onsubmit="return confirm(this.dataset.msg)">
+                        <button class="btn tiny secondary" type="submit" th:text="#{action.delete}">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+
+        <h3 style="margin-top:1.2rem" th:text="#{calendar.newOverride}">Новая замена дня</h3>
+        <form th:action="@{/admin/calendar/day-overrides}" method="post">
+            <div class="row">
+                <label><span th:text="#{calendar.date}">Дата</span><input type="date" name="date" required></label>
+                <label><span th:text="#{calendar.substitute}">Расписание какого дня</span>
+                    <select name="substituteDayOfWeek" required>
+                        <option th:each="d : ${days}" th:value="${d}" th:text="#{'day.' + ${d.name()}}"></option>
+                    </select>
+                </label>
+            </div>
+            <label><span th:text="#{calendar.title}">Название</span><input type="text" name="title"></label>
+            <div class="row">
+                <label><span th:text="#{calendar.course}">Курс (необязательно)</span>
+                    <select name="courseId">
+                        <option value="" th:text="#{calendar.scopeGlobal}">— все —</option>
+                        <option th:each="c : ${courses}" th:value="${c.id}" th:text="${c.name}"></option>
+                    </select>
+                </label>
+                <label><span th:text="#{calendar.group}">Группа (необязательно)</span>
+                    <select name="schoolClassId">
+                        <option value="" th:text="#{common.none}">— нет —</option>
+                        <option th:each="c : ${classes}" th:value="${c.id}" th:text="${c.name}"></option>
+                    </select>
+                </label>
+            </div>
+            <p class="muted small" th:text="#{calendar.scopeHint}">Если выбрана группа — применяется к ней; иначе к курсу; иначе ко всем.</p>
+            <button class="btn" type="submit" th:text="#{action.add}">Добавить</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

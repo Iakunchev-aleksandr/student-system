@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head(#{page.courses})}"></head>
+<body>
+<header th:replace="~{fragments/common :: topbar}"></header>
+<div class="container">
+    <h1 th:text="#{courses.heading}">Курсы</h1>
+    <p class="muted" th:text="#{courses.desc}">Курсы объединяют группы. Каждая группа относится к одному курсу.</p>
+    <div th:replace="~{fragments/common :: flash}"></div>
+
+    <div class="card">
+        <p class="muted small" th:if="${courses.isEmpty()}" th:text="#{courses.empty}">Пока нет курсов.</p>
+        <table th:unless="${courses.isEmpty()}">
+            <thead><tr>
+                <th th:text="#{courses.colName}">Название</th>
+                <th style="width:120px" th:text="#{courses.colOrder}">Порядок</th>
+                <th style="text-align:right" th:text="#{common.actions}">Действия</th>
+            </tr></thead>
+            <tbody>
+            <tr th:each="c : ${courses}">
+                <td colspan="2">
+                    <form th:action="@{/admin/courses/{id}(id=${c.id})}" method="post"
+                          style="display:flex;gap:.4rem;align-items:center;margin:0">
+                        <input type="text" name="name" th:value="${c.name}" required style="max-width:320px">
+                        <input type="number" name="orderIndex" th:value="${c.orderIndex}" style="max-width:90px">
+                        <button class="btn tiny" type="submit" th:text="#{action.save}">Сохранить</button>
+                    </form>
+                </td>
+                <td style="text-align:right">
+                    <form th:action="@{/admin/courses/{id}/delete(id=${c.id})}" method="post" style="margin:0"
+                          th:attr="data-msg=#{common.confirmDelete}" onsubmit="return confirm(this.dataset.msg)">
+                        <button class="btn tiny secondary" type="submit" th:text="#{action.delete}">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3 th:text="#{courses.new}">Новый курс</h3>
+        <form th:action="@{/admin/courses}" method="post">
+            <div class="row">
+                <label><span th:text="#{courses.name}">Название</span><input type="text" name="name" required></label>
+                <label><span th:text="#{courses.order}">Порядок</span><input type="number" name="orderIndex" value="0"></label>
+            </div>
+            <button class="btn" type="submit" th:text="#{action.add}">Добавить</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

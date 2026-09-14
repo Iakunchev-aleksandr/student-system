@@ -10,6 +10,8 @@ import java.util.List;
 
 public interface ScheduleTemplateRepository extends JpaRepository<ScheduleTemplate, Long> {
     List<ScheduleTemplate> findAllByOrderByDayOfWeekAscStartTimeAsc();
+    List<ScheduleTemplate> findByTeacher(AppUser teacher);
+    List<ScheduleTemplate> findBySchoolClass(SchoolClass schoolClass);
 
     boolean existsByTeacher(AppUser teacher);
     boolean existsBySchoolClass(SchoolClass schoolClass);
