@@ -23,11 +23,14 @@ public class ProfileController {
     private final CurrentUserService currentUser;
     private final AppUserRepository users;
     private final PasswordEncoder encoder;
+    private final Messages messages;
 
-    public ProfileController(CurrentUserService currentUser, AppUserRepository users, PasswordEncoder encoder) {
+    public ProfileController(CurrentUserService currentUser, AppUserRepository users, PasswordEncoder encoder,
+                             Messages messages) {
         this.currentUser = currentUser;
         this.users = users;
         this.encoder = encoder;
+        this.messages = messages;
     }
 
     @GetMapping
@@ -44,7 +47,7 @@ public class ProfileController {
         AppUser user = currentUser.require(principal);
 
         if (lastName == null || lastName.isBlank() || firstName == null || firstName.isBlank()) {
-            ra.addFlashAttribute("error", "Имя и фамилия обязательны");
+            ra.addFlashAttribute("error", messages.get("flash.nameSurnameRequired"));
             return "redirect:/profile";
         }
         user.setLastName(lastName.trim());
@@ -52,14 +55,14 @@ public class ProfileController {
 
         if (password != null && !password.isBlank()) {
             if (!password.equals(passwordConfirm)) {
-                ra.addFlashAttribute("error", "Пароли не совпадают");
+                ra.addFlashAttribute("error", messages.get("flash.passwordMismatch"));
                 return "redirect:/profile";
             }
             user.setPassword(encoder.encode(password));
         }
 
         users.save(user);
-        ra.addFlashAttribute("message", "Профиль обновлён");
+        ra.addFlashAttribute("message", messages.get("flash.profileSaved"));
         return "redirect:/profile";
     }
 }

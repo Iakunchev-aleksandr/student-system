@@ -40,6 +40,7 @@ public class AdminController {
     private final ScheduleGenerationService scheduleGen;
     private final FileStorageService storage;
     private final PasswordEncoder encoder;
+    private final Messages messages;
 
     public AdminController(AppUserRepository users, SchoolClassRepository classes, SubjectRepository subjects,
                            ScheduleTemplateRepository templates, LessonRepository lessons, GradeRepository grades,
@@ -47,7 +48,7 @@ public class AdminController {
                            TeacherCommentRepository comments, SchoolEventRepository events,
                            FileAttachmentRepository files, CourseRepository courses, HolidayRepository holidays,
                            DayOverrideRepository dayOverrides, TermRepository terms, ScheduleGenerationService scheduleGen,
-                           FileStorageService storage, PasswordEncoder encoder) {
+                           FileStorageService storage, PasswordEncoder encoder, Messages messages) {
         this.users = users;
         this.classes = classes;
         this.subjects = subjects;
@@ -66,6 +67,7 @@ public class AdminController {
         this.scheduleGen = scheduleGen;
         this.storage = storage;
         this.encoder = encoder;
+        this.messages = messages;
     }
 
     @GetMapping
@@ -97,11 +99,11 @@ public class AdminController {
                              @RequestParam(required = false) MultipartFile photo,
                              RedirectAttributes ra) {
         if (username == null || username.isBlank()) {
-            ra.addFlashAttribute("error", "Логин обязателен");
+            ra.addFlashAttribute("error", messages.get("flash.loginRequired"));
             return "redirect:/admin/users";
         }
         if (users.existsByUsername(username)) {
-            ra.addFlashAttribute("error", "Логин уже занят: " + username);
+            ra.addFlashAttribute("error", messages.get("flash.loginTaken", username));
             return "redirect:/admin/users";
         }
         if (role == Role.STUDENT) {
@@ -128,7 +130,7 @@ public class AdminController {
             u.setPhotoName(stored);
         }
         users.save(u);
-        ra.addFlashAttribute("message", "Пользователь создан");
+        ra.addFlashAttribute("message", messages.get("flash.userCreated"));
         return "redirect:/admin/users";
     }
 
@@ -151,7 +153,7 @@ public class AdminController {
                              RedirectAttributes ra) {
         AppUser u = users.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (users.existsByUsernameAndIdNot(username, id)) {
-            ra.addFlashAttribute("error", "Логин уже занят: " + username);
+            ra.addFlashAttribute("error", messages.get("flash.loginTaken", username));
             return "redirect:/admin/users/" + id + "/edit";
         }
         if (role == Role.STUDENT) {
@@ -180,7 +182,7 @@ public class AdminController {
             u.setPhotoName(stored);
         }
         users.save(u);
-        ra.addFlashAttribute("message", "Изменения сохранены");
+        ra.addFlashAttribute("message", messages.get("flash.saved"));
         return "redirect:/admin/users";
     }
 
@@ -193,14 +195,14 @@ public class AdminController {
             attendance.deleteAll(attendance.findByStudent(u));
             notes.deleteAll(notes.findByStudent(u));
             users.delete(u);
-            ra.addFlashAttribute("message", "Студент удалён");
+            ra.addFlashAttribute("message", messages.get("flash.studentDeleted"));
         } else {
             // Преподавателя/админа нельзя удалить, пока на него ссылаются уроки, шаблоны, события или комментарии.
             if (lessons.existsByTeacher(u) || templates.existsByTeacher(u)
                     || events.existsByCreatedBy(u) || comments.existsByAuthor(u)
                     || files.existsByUploadedBy(u)) {
                 ra.addFlashAttribute("error",
-                        "Нельзя удалить: на пользователя ссылаются уроки, шаблоны, события или комментарии");
+                        messages.get("flash.userDeleteBlocked"));
                 return "redirect:/admin/users";
             }
             // Снимаем с роли классного руководителя, если назначен.
@@ -209,7 +211,7 @@ public class AdminController {
                 classes.save(c);
             }
             users.delete(u);
-            ra.addFlashAttribute("message", "Пользователь удалён");
+            ra.addFlashAttribute("message", messages.get("flash.userDeleted"));
         }
         return "redirect:/admin/users";
     }
@@ -229,12 +231,12 @@ public class AdminController {
                               @RequestParam Long courseId,
                               @RequestParam(required = false) Long supervisorId, RedirectAttributes ra) {
         if (classes.existsByStudyYearAndGroupCode(studyYear, groupCode)) {
-            ra.addFlashAttribute("error", "Такая группа уже существует");
+            ra.addFlashAttribute("error", messages.get("flash.classExists"));
             return "redirect:/admin/classes";
         }
         Course course = courses.findById(courseId).orElse(null);
         if (course == null) {
-            ra.addFlashAttribute("error", "Выберите курс");
+            ra.addFlashAttribute("error", messages.get("flash.selectCourse"));
             return "redirect:/admin/classes";
         }
         SchoolClass c = new SchoolClass();
@@ -245,7 +247,7 @@ public class AdminController {
             c.setSupervisor(users.findById(supervisorId).orElse(null));
         }
         classes.save(c);
-        ra.addFlashAttribute("message", "Группа создана");
+        ra.addFlashAttribute("message", messages.get("flash.classCreated"));
         return "redirect:/admin/classes";
     }
 
@@ -265,12 +267,12 @@ public class AdminController {
                               RedirectAttributes ra) {
         SchoolClass c = classes.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (classes.existsByStudyYearAndGroupCodeAndIdNot(studyYear, groupCode, id)) {
-            ra.addFlashAttribute("error", "Такая группа уже существует");
+            ra.addFlashAttribute("error", messages.get("flash.classExists"));
             return "redirect:/admin/classes/" + id + "/edit";
         }
         Course course = courses.findById(courseId).orElse(null);
         if (course == null) {
-            ra.addFlashAttribute("error", "Выберите курс");
+            ra.addFlashAttribute("error", messages.get("flash.selectCourse"));
             return "redirect:/admin/classes/" + id + "/edit";
         }
         c.setStudyYear(studyYear);
@@ -278,7 +280,7 @@ public class AdminController {
         c.setCourse(course);
         c.setSupervisor(supervisorId != null ? users.findById(supervisorId).orElse(null) : null);
         classes.save(c);
-        ra.addFlashAttribute("message", "Изменения сохранены");
+        ra.addFlashAttribute("message", messages.get("flash.saved"));
         return "redirect:/admin/classes";
     }
 
@@ -296,11 +298,11 @@ public class AdminController {
         if (users.existsBySchoolClass(c) || lessons.existsBySchoolClass(c)
                 || templates.existsBySchoolClass(c) || events.existsBySchoolClass(c)) {
             ra.addFlashAttribute("error",
-                    "Нельзя удалить: к группе привязаны студенты, уроки, шаблоны или события");
+                    messages.get("flash.classDeleteBlocked"));
             return "redirect:/admin/classes";
         }
         classes.delete(c);
-        ra.addFlashAttribute("message", "Группа удалена");
+        ra.addFlashAttribute("message", messages.get("flash.classDeleted"));
         return "redirect:/admin/classes";
     }
 
@@ -316,18 +318,18 @@ public class AdminController {
     public String createCourse(@RequestParam String name, @RequestParam(defaultValue = "0") int orderIndex,
                                RedirectAttributes ra) {
         if (name == null || name.isBlank()) {
-            ra.addFlashAttribute("error", "Название обязательно");
+            ra.addFlashAttribute("error", messages.get("flash.nameRequired"));
             return "redirect:/admin/courses";
         }
         if (courses.existsByName(name.trim())) {
-            ra.addFlashAttribute("error", "Такой курс уже есть");
+            ra.addFlashAttribute("error", messages.get("flash.courseExists"));
             return "redirect:/admin/courses";
         }
         Course c = new Course();
         c.setName(name.trim());
         c.setOrderIndex(orderIndex);
         courses.save(c);
-        ra.addFlashAttribute("message", "Курс добавлен");
+        ra.addFlashAttribute("message", messages.get("flash.courseCreated"));
         return "redirect:/admin/courses";
     }
 
@@ -336,17 +338,17 @@ public class AdminController {
                                @RequestParam(defaultValue = "0") int orderIndex, RedirectAttributes ra) {
         Course c = courses.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (name == null || name.isBlank()) {
-            ra.addFlashAttribute("error", "Название обязательно");
+            ra.addFlashAttribute("error", messages.get("flash.nameRequired"));
             return "redirect:/admin/courses";
         }
         if (courses.existsByNameAndIdNot(name.trim(), id)) {
-            ra.addFlashAttribute("error", "Такой курс уже есть");
+            ra.addFlashAttribute("error", messages.get("flash.courseExists"));
             return "redirect:/admin/courses";
         }
         c.setName(name.trim());
         c.setOrderIndex(orderIndex);
         courses.save(c);
-        ra.addFlashAttribute("message", "Изменения сохранены");
+        ra.addFlashAttribute("message", messages.get("flash.saved"));
         return "redirect:/admin/courses";
     }
 
@@ -354,11 +356,11 @@ public class AdminController {
     public String deleteCourse(@PathVariable Long id, RedirectAttributes ra) {
         Course c = courses.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (classes.existsByCourse(c) || holidays.existsByCourse(c) || dayOverrides.existsByCourse(c)) {
-            ra.addFlashAttribute("error", "Нельзя удалить: к курсу привязаны группы, каникулы или замены");
+            ra.addFlashAttribute("error", messages.get("flash.courseDeleteBlocked"));
             return "redirect:/admin/courses";
         }
         courses.delete(c);
-        ra.addFlashAttribute("message", "Курс удалён");
+        ra.addFlashAttribute("message", messages.get("flash.courseDeleted"));
         return "redirect:/admin/courses";
     }
 
@@ -376,11 +378,11 @@ public class AdminController {
                              @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
                              RedirectAttributes ra) {
         if (name == null || name.isBlank()) {
-            ra.addFlashAttribute("error", "Название обязательно");
+            ra.addFlashAttribute("error", messages.get("flash.nameRequired"));
             return "redirect:/admin/terms";
         }
         if (endDate.isBefore(startDate)) {
-            ra.addFlashAttribute("error", "Дата окончания раньше начала");
+            ra.addFlashAttribute("error", messages.get("flash.endBeforeStart"));
             return "redirect:/admin/terms";
         }
         Term t = new Term();
@@ -388,7 +390,7 @@ public class AdminController {
         t.setStartDate(startDate);
         t.setEndDate(endDate);
         terms.save(t);
-        ra.addFlashAttribute("message", "Семестр добавлен");
+        ra.addFlashAttribute("message", messages.get("flash.termCreated"));
         return "redirect:/admin/terms";
     }
 
@@ -399,14 +401,14 @@ public class AdminController {
                              RedirectAttributes ra) {
         Term t = terms.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (name == null || name.isBlank() || endDate.isBefore(startDate)) {
-            ra.addFlashAttribute("error", "Проверьте название и даты");
+            ra.addFlashAttribute("error", messages.get("flash.checkNameDates"));
             return "redirect:/admin/terms";
         }
         t.setName(name.trim());
         t.setStartDate(startDate);
         t.setEndDate(endDate);
         terms.save(t);
-        ra.addFlashAttribute("message", "Изменения сохранены");
+        ra.addFlashAttribute("message", messages.get("flash.saved"));
         return "redirect:/admin/terms";
     }
 
@@ -414,11 +416,11 @@ public class AdminController {
     public String deleteTerm(@PathVariable Long id, RedirectAttributes ra) {
         Term t = terms.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (templates.existsByTerm(t)) {
-            ra.addFlashAttribute("error", "Нельзя удалить: к семестру привязаны слоты расписания");
+            ra.addFlashAttribute("error", messages.get("flash.termDeleteBlocked"));
             return "redirect:/admin/terms";
         }
         terms.delete(t);
-        ra.addFlashAttribute("message", "Семестр удалён");
+        ra.addFlashAttribute("message", messages.get("flash.termDeleted"));
         return "redirect:/admin/terms";
     }
 
@@ -441,7 +443,7 @@ public class AdminController {
                                 @RequestParam(required = false) Long courseId,
                                 @RequestParam(required = false) Long schoolClassId, RedirectAttributes ra) {
         if (endDate.isBefore(startDate)) {
-            ra.addFlashAttribute("error", "Дата окончания раньше начала");
+            ra.addFlashAttribute("error", messages.get("flash.endBeforeStart"));
             return "redirect:/admin/calendar";
         }
         Holiday h = new Holiday();
@@ -450,14 +452,14 @@ public class AdminController {
         h.setTitle(title);
         applyScope(h::setCourse, h::setSchoolClass, courseId, schoolClassId);
         holidays.save(h);
-        ra.addFlashAttribute("message", "Каникулы добавлены");
+        ra.addFlashAttribute("message", messages.get("flash.holidayCreated"));
         return "redirect:/admin/calendar";
     }
 
     @PostMapping("/calendar/holidays/{id}/delete")
     public String deleteHoliday(@PathVariable Long id, RedirectAttributes ra) {
         holidays.deleteById(id);
-        ra.addFlashAttribute("message", "Каникулы удалены");
+        ra.addFlashAttribute("message", messages.get("flash.holidayDeleted"));
         return "redirect:/admin/calendar";
     }
 
@@ -473,14 +475,14 @@ public class AdminController {
         o.setTitle(title);
         applyScope(o::setCourse, o::setSchoolClass, courseId, schoolClassId);
         dayOverrides.save(o);
-        ra.addFlashAttribute("message", "Замена дня добавлена");
+        ra.addFlashAttribute("message", messages.get("flash.overrideCreated"));
         return "redirect:/admin/calendar";
     }
 
     @PostMapping("/calendar/day-overrides/{id}/delete")
     public String deleteDayOverride(@PathVariable Long id, RedirectAttributes ra) {
         dayOverrides.deleteById(id);
-        ra.addFlashAttribute("message", "Замена дня удалена");
+        ra.addFlashAttribute("message", messages.get("flash.overrideDeleted"));
         return "redirect:/admin/calendar";
     }
 
@@ -508,17 +510,17 @@ public class AdminController {
     @PostMapping("/subjects")
     public String createSubject(@RequestParam String name, RedirectAttributes ra) {
         if (name == null || name.isBlank()) {
-            ra.addFlashAttribute("error", "Название обязательно");
+            ra.addFlashAttribute("error", messages.get("flash.nameRequired"));
             return "redirect:/admin/subjects";
         }
         if (subjects.existsByName(name)) {
-            ra.addFlashAttribute("error", "Такой предмет уже есть");
+            ra.addFlashAttribute("error", messages.get("flash.subjectExists"));
             return "redirect:/admin/subjects";
         }
         Subject s = new Subject();
         s.setName(name.trim());
         subjects.save(s);
-        ra.addFlashAttribute("message", "Предмет добавлен");
+        ra.addFlashAttribute("message", messages.get("flash.subjectCreated"));
         return "redirect:/admin/subjects";
     }
 
@@ -526,16 +528,16 @@ public class AdminController {
     public String updateSubject(@PathVariable Long id, @RequestParam String name, RedirectAttributes ra) {
         Subject s = subjects.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (name == null || name.isBlank()) {
-            ra.addFlashAttribute("error", "Название обязательно");
+            ra.addFlashAttribute("error", messages.get("flash.nameRequired"));
             return "redirect:/admin/subjects";
         }
         if (subjects.existsByNameAndIdNot(name, id)) {
-            ra.addFlashAttribute("error", "Такой предмет уже есть");
+            ra.addFlashAttribute("error", messages.get("flash.subjectExists"));
             return "redirect:/admin/subjects";
         }
         s.setName(name.trim());
         subjects.save(s);
-        ra.addFlashAttribute("message", "Изменения сохранены");
+        ra.addFlashAttribute("message", messages.get("flash.saved"));
         return "redirect:/admin/subjects";
     }
 
@@ -543,11 +545,11 @@ public class AdminController {
     public String deleteSubject(@PathVariable Long id, RedirectAttributes ra) {
         Subject s = subjects.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (lessons.existsBySubject(s) || templates.existsBySubject(s)) {
-            ra.addFlashAttribute("error", "Нельзя удалить: предмет используется в расписании или уроках");
+            ra.addFlashAttribute("error", messages.get("flash.subjectDeleteBlocked"));
             return "redirect:/admin/subjects";
         }
         subjects.delete(s);
-        ra.addFlashAttribute("message", "Предмет удалён");
+        ra.addFlashAttribute("message", messages.get("flash.subjectDeleted"));
         return "redirect:/admin/subjects";
     }
 
@@ -572,7 +574,7 @@ public class AdminController {
                                  @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime endTime,
                                  @RequestParam(required = false) String room, RedirectAttributes ra) {
         if (!endTime.isAfter(startTime)) {
-            ra.addFlashAttribute("error", "Время окончания должно быть позже начала");
+            ra.addFlashAttribute("error", messages.get("flash.endAfterStart"));
             return "redirect:/admin/schedule";
         }
         ScheduleTemplate t = new ScheduleTemplate();
@@ -585,7 +587,7 @@ public class AdminController {
         t.setEndTime(endTime);
         t.setRoom(room);
         templates.save(t);
-        ra.addFlashAttribute("message", "Слот добавлен");
+        ra.addFlashAttribute("message", messages.get("flash.slotAdded"));
         return "redirect:/admin/schedule";
     }
 
@@ -611,7 +613,7 @@ public class AdminController {
                                  @RequestParam(required = false) String room, RedirectAttributes ra) {
         ScheduleTemplate t = templates.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (!endTime.isAfter(startTime)) {
-            ra.addFlashAttribute("error", "Время окончания должно быть позже начала");
+            ra.addFlashAttribute("error", messages.get("flash.endAfterStart"));
             return "redirect:/admin/schedule/" + id + "/edit";
         }
         t.setSchoolClass(classes.findById(schoolClassId).orElseThrow());
@@ -623,14 +625,14 @@ public class AdminController {
         t.setEndTime(endTime);
         t.setRoom(room);
         templates.save(t);
-        ra.addFlashAttribute("message", "Изменения сохранены");
+        ra.addFlashAttribute("message", messages.get("flash.saved"));
         return "redirect:/admin/schedule";
     }
 
     @PostMapping("/schedule/{id}/delete")
     public String deleteTemplate(@PathVariable Long id, RedirectAttributes ra) {
         templates.deleteById(id);
-        ra.addFlashAttribute("message", "Слот удалён");
+        ra.addFlashAttribute("message", messages.get("flash.slotDeleted"));
         return "redirect:/admin/schedule";
     }
 
@@ -670,17 +672,17 @@ public class AdminController {
     // Возвращает текст ошибки или null, если номер корректен.
     private String validateStudentNumber(String value, Long currentUserId) {
         if (value == null || value.isBlank()) {
-            return "Укажите 6-значный номер студента";
+            return messages.get("flash.studentNumberRequired");
         }
         String v = value.trim();
         if (!v.matches("\\d{6}")) {
-            return "Номер студента должен состоять ровно из 6 цифр";
+            return messages.get("flash.studentNumberFormat");
         }
         boolean taken = currentUserId == null
                 ? users.existsByStudentNumber(v)
                 : users.existsByStudentNumberAndIdNot(v, currentUserId);
         if (taken) {
-            return "Номер студента уже занят: " + v;
+            return messages.get("flash.studentNumberTaken", v);
         }
         return null;
     }
