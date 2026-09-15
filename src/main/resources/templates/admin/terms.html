@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head(#{page.terms})}"></head>
+<body>
+<header th:replace="~{fragments/common :: topbar}"></header>
+<div class="container">
+    <h1 th:text="#{terms.heading}">Семестры</h1>
+    <p class="muted" th:text="#{terms.desc}">Периоды учебного года. Слот расписания привязывается к семестру, и генератор применяет его только внутри периода — так «前期» и «後期» дают разные расписания.</p>
+    <div th:replace="~{fragments/common :: flash}"></div>
+
+    <div class="card">
+        <p class="muted small" th:if="${terms.isEmpty()}" th:text="#{terms.empty}">Пока нет семестров.</p>
+        <table th:unless="${terms.isEmpty()}">
+            <thead><tr>
+                <th th:text="#{terms.colName}">Название</th>
+                <th th:text="#{terms.colStart}">Начало</th>
+                <th th:text="#{terms.colEnd}">Окончание</th>
+                <th style="text-align:right" th:text="#{common.actions}">Действия</th>
+            </tr></thead>
+            <tbody>
+            <tr th:each="t : ${terms}">
+                <td colspan="3">
+                    <form th:action="@{/admin/terms/{id}(id=${t.id})}" method="post"
+                          style="display:flex;gap:.4rem;align-items:center;margin:0;flex-wrap:wrap">
+                        <input type="text" name="name" th:value="${t.name}" required style="max-width:180px">
+                        <input type="date" name="startDate" th:value="${t.startDate}" required>
+                        <input type="date" name="endDate" th:value="${t.endDate}" required>
+                        <button class="btn tiny" type="submit" th:text="#{action.save}">Сохранить</button>
+                    </form>
+                </td>
+                <td style="text-align:right">
+                    <form th:action="@{/admin/terms/{id}/delete(id=${t.id})}" method="post" style="margin:0"
+                          th:attr="data-msg=#{common.confirmDelete}" onsubmit="return confirm(this.dataset.msg)">
+                        <button class="btn tiny secondary" type="submit" th:text="#{action.delete}">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3 th:text="#{terms.new}">Новый семестр</h3>
+        <form th:action="@{/admin/terms}" method="post">
+            <label><span th:text="#{terms.name}">Название</span><input type="text" name="name" required placeholder="前期 / 後期"></label>
+            <div class="row">
+                <label><span th:text="#{terms.start}">Начало</span><input type="date" name="startDate" required></label>
+                <label><span th:text="#{terms.end}">Окончание</span><input type="date" name="endDate" required></label>
+            </div>
+            <button class="btn" type="submit" th:text="#{action.add}">Добавить</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

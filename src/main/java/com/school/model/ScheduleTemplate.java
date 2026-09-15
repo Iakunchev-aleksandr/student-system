@@ -26,6 +26,11 @@ public class ScheduleTemplate {
     @JoinColumn(name = "teacher_id")
     private AppUser teacher;
 
+    // Семестр, к которому относится слот. null = действует всегда (без привязки к периоду).
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "term_id")
+    private Term term;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private DayOfWeek dayOfWeek;
@@ -49,6 +54,9 @@ public class ScheduleTemplate {
 
     public AppUser getTeacher() { return teacher; }
     public void setTeacher(AppUser teacher) { this.teacher = teacher; }
+
+    public Term getTerm() { return term; }
+    public void setTerm(Term term) { this.term = term; }
 
     public DayOfWeek getDayOfWeek() { return dayOfWeek; }
     public void setDayOfWeek(DayOfWeek dayOfWeek) { this.dayOfWeek = dayOfWeek; }

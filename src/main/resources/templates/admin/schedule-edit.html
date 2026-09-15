@@ -31,6 +31,13 @@
                 </label>
             </div>
             <div class="row">
+                <label><span th:text="#{schedule.term}">Семестр</span>
+                    <select name="termId">
+                        <option value="" th:text="#{schedule.termAlways}">— всегда —</option>
+                        <option th:each="tm : ${terms}" th:value="${tm.id}" th:text="${tm.label}"
+                                th:selected="${editTemplate.term != null and tm.id == editTemplate.term.id}"></option>
+                    </select>
+                </label>
                 <label><span th:text="#{schedule.dayOfWeek}">День недели</span>
                     <select name="dayOfWeek" required>
                         <option th:each="d : ${days}" th:value="${d}" th:text="#{'day.' + ${d.name()}}"

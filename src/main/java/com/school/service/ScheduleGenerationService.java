@@ -46,6 +46,10 @@ public class ScheduleGenerationService {
         for (LocalDate day = from; !day.isAfter(to); day = day.plusDays(1)) {
             for (ScheduleTemplate t : allTemplates) {
                 SchoolClass clazz = t.getSchoolClass();
+                // Слот с привязкой к семестру действует только внутри его периода.
+                if (t.getTerm() != null && !t.getTerm().covers(day)) {
+                    continue;
+                }
                 if (isHoliday(clazz, day, allHolidays)) {
                     continue;
                 }

@@ -10,9 +10,10 @@
 
     <div class="card">
         <table>
-            <thead><tr><th th:text="#{schedule.colDay}">День</th><th th:text="#{schedule.colTime}">Время</th><th th:text="#{schedule.colGroup}">Группа</th><th th:text="#{schedule.colSubject}">Предмет</th><th th:text="#{schedule.colTeacher}">Преподаватель</th><th th:text="#{schedule.colRoom}">Каб.</th><th th:text="#{common.actions}">Действия</th></tr></thead>
+            <thead><tr><th th:text="#{schedule.colTerm}">Семестр</th><th th:text="#{schedule.colDay}">День</th><th th:text="#{schedule.colTime}">Время</th><th th:text="#{schedule.colGroup}">Группа</th><th th:text="#{schedule.colSubject}">Предмет</th><th th:text="#{schedule.colTeacher}">Преподаватель</th><th th:text="#{schedule.colRoom}">Каб.</th><th th:text="#{common.actions}">Действия</th></tr></thead>
             <tbody>
             <tr th:each="t : ${templates}">
+                <td th:text="${t.term != null ? t.term.name : '—'}">前期</td>
                 <td th:text="#{'day.' + ${t.dayOfWeek.name()}}">Пн</td>
                 <td th:text="${#temporals.format(t.startTime,'HH:mm')} + '–' + ${#temporals.format(t.endTime,'HH:mm')}">09:00</td>
                 <td th:text="${t.schoolClass.name}">1年A組</td>
@@ -29,7 +30,7 @@
                     </div>
                 </td>
             </tr>
-            <tr th:if="${templates.isEmpty()}"><td colspan="7" class="muted" th:text="#{schedule.empty}">Слотов пока нет.</td></tr>
+            <tr th:if="${templates.isEmpty()}"><td colspan="8" class="muted" th:text="#{schedule.empty}">Слотов пока нет.</td></tr>
             </tbody>
         </table>
     </div>
@@ -55,6 +56,12 @@
                 </label>
             </div>
             <div class="row">
+                <label><span th:text="#{schedule.term}">Семестр</span>
+                    <select name="termId">
+                        <option value="" th:text="#{schedule.termAlways}">— всегда —</option>
+                        <option th:each="tm : ${terms}" th:value="${tm.id}" th:text="${tm.label}"></option>
+                    </select>
+                </label>
                 <label><span th:text="#{schedule.dayOfWeek}">День недели</span>
                     <select name="dayOfWeek" required>
                         <option th:each="d : ${days}" th:value="${d}" th:text="#{'day.' + ${d.name()}}"></option>

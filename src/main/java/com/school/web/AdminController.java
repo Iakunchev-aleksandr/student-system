@@ -36,6 +36,7 @@ public class AdminController {
     private final CourseRepository courses;
     private final HolidayRepository holidays;
     private final DayOverrideRepository dayOverrides;
+    private final TermRepository terms;
     private final ScheduleGenerationService scheduleGen;
     private final FileStorageService storage;
     private final PasswordEncoder encoder;
@@ -45,7 +46,7 @@ public class AdminController {
                            AttendanceRepository attendance, StudentNoteRepository notes,
                            TeacherCommentRepository comments, SchoolEventRepository events,
                            FileAttachmentRepository files, CourseRepository courses, HolidayRepository holidays,
-                           DayOverrideRepository dayOverrides, ScheduleGenerationService scheduleGen,
+                           DayOverrideRepository dayOverrides, TermRepository terms, ScheduleGenerationService scheduleGen,
                            FileStorageService storage, PasswordEncoder encoder) {
         this.users = users;
         this.classes = classes;
@@ -61,6 +62,7 @@ public class AdminController {
         this.courses = courses;
         this.holidays = holidays;
         this.dayOverrides = dayOverrides;
+        this.terms = terms;
         this.scheduleGen = scheduleGen;
         this.storage = storage;
         this.encoder = encoder;
@@ -360,6 +362,66 @@ public class AdminController {
         return "redirect:/admin/courses";
     }
 
+    // ===================== Семестры (学期) =====================
+
+    @GetMapping("/terms")
+    public String termsPage(Model model) {
+        model.addAttribute("terms", terms.findAllByOrderByStartDateAsc());
+        return "admin/terms";
+    }
+
+    @PostMapping("/terms")
+    public String createTerm(@RequestParam String name,
+                             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                             RedirectAttributes ra) {
+        if (name == null || name.isBlank()) {
+            ra.addFlashAttribute("error", "Название обязательно");
+            return "redirect:/admin/terms";
+        }
+        if (endDate.isBefore(startDate)) {
+            ra.addFlashAttribute("error", "Дата окончания раньше начала");
+            return "redirect:/admin/terms";
+        }
+        Term t = new Term();
+        t.setName(name.trim());
+        t.setStartDate(startDate);
+        t.setEndDate(endDate);
+        terms.save(t);
+        ra.addFlashAttribute("message", "Семестр добавлен");
+        return "redirect:/admin/terms";
+    }
+
+    @PostMapping("/terms/{id}")
+    public String updateTerm(@PathVariable Long id, @RequestParam String name,
+                             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                             RedirectAttributes ra) {
+        Term t = terms.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (name == null || name.isBlank() || endDate.isBefore(startDate)) {
+            ra.addFlashAttribute("error", "Проверьте название и даты");
+            return "redirect:/admin/terms";
+        }
+        t.setName(name.trim());
+        t.setStartDate(startDate);
+        t.setEndDate(endDate);
+        terms.save(t);
+        ra.addFlashAttribute("message", "Изменения сохранены");
+        return "redirect:/admin/terms";
+    }
+
+    @PostMapping("/terms/{id}/delete")
+    public String deleteTerm(@PathVariable Long id, RedirectAttributes ra) {
+        Term t = terms.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (templates.existsByTerm(t)) {
+            ra.addFlashAttribute("error", "Нельзя удалить: к семестру привязаны слоты расписания");
+            return "redirect:/admin/terms";
+        }
+        terms.delete(t);
+        ra.addFlashAttribute("message", "Семестр удалён");
+        return "redirect:/admin/terms";
+    }
+
     // ===================== Каникулы и замены дней =====================
 
     @GetMapping("/calendar")
@@ -497,13 +559,15 @@ public class AdminController {
         model.addAttribute("classes", classes.findAllByOrderByStudyYearAscGroupCodeAsc());
         model.addAttribute("subjects", subjects.findAllByOrderByName());
         model.addAttribute("teachers", users.findByRoleOrderByLastNameAscFirstNameAsc(Role.TEACHER));
+        model.addAttribute("terms", terms.findAllByOrderByStartDateAsc());
         model.addAttribute("days", DayOfWeek.values());
         return "admin/schedule";
     }
 
     @PostMapping("/schedule")
     public String createTemplate(@RequestParam Long schoolClassId, @RequestParam Long subjectId,
-                                 @RequestParam Long teacherId, @RequestParam DayOfWeek dayOfWeek,
+                                 @RequestParam Long teacherId, @RequestParam(required = false) Long termId,
+                                 @RequestParam DayOfWeek dayOfWeek,
                                  @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime startTime,
                                  @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime endTime,
                                  @RequestParam(required = false) String room, RedirectAttributes ra) {
@@ -515,6 +579,7 @@ public class AdminController {
         t.setSchoolClass(classes.findById(schoolClassId).orElseThrow());
         t.setSubject(subjects.findById(subjectId).orElseThrow());
         t.setTeacher(users.findById(teacherId).orElseThrow());
+        t.setTerm(termId != null ? terms.findById(termId).orElse(null) : null);
         t.setDayOfWeek(dayOfWeek);
         t.setStartTime(startTime);
         t.setEndTime(endTime);
@@ -531,6 +596,7 @@ public class AdminController {
         model.addAttribute("classes", classes.findAllByOrderByStudyYearAscGroupCodeAsc());
         model.addAttribute("subjects", subjects.findAllByOrderByName());
         model.addAttribute("teachers", users.findByRoleOrderByLastNameAscFirstNameAsc(Role.TEACHER));
+        model.addAttribute("terms", terms.findAllByOrderByStartDateAsc());
         model.addAttribute("days", DayOfWeek.values());
         return "admin/schedule-edit";
     }
@@ -538,6 +604,7 @@ public class AdminController {
     @PostMapping("/schedule/{id}")
     public String updateTemplate(@PathVariable Long id, @RequestParam Long schoolClassId,
                                  @RequestParam Long subjectId, @RequestParam Long teacherId,
+                                 @RequestParam(required = false) Long termId,
                                  @RequestParam DayOfWeek dayOfWeek,
                                  @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime startTime,
                                  @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime endTime,
@@ -550,6 +617,7 @@ public class AdminController {
         t.setSchoolClass(classes.findById(schoolClassId).orElseThrow());
         t.setSubject(subjects.findById(subjectId).orElseThrow());
         t.setTeacher(users.findById(teacherId).orElseThrow());
+        t.setTerm(termId != null ? terms.findById(termId).orElse(null) : null);
         t.setDayOfWeek(dayOfWeek);
         t.setStartTime(startTime);
         t.setEndTime(endTime);
