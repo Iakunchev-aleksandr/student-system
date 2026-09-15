@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head(#{page.profile})}"></head>
+<body>
+<header th:replace="~{fragments/common :: topbar}"></header>
+<div class="container">
+    <h1 th:text="#{profile.heading}">Профиль</h1>
+    <p class="muted" th:text="#{profile.desc}">Здесь можно изменить имя, фамилию и пароль.</p>
+    <div th:replace="~{fragments/common :: flash}"></div>
+
+    <div class="card">
+        <p class="muted small">
+            <span th:text="#{profile.login}">Логин</span>: <strong th:text="${profileUser.username}">user</strong>
+            &nbsp;·&nbsp;
+            <span th:text="#{profile.role}">Роль</span>: <span th:text="#{'role.' + ${profileUser.role.name()}}">роль</span>
+        </p>
+        <form th:action="@{/profile}" method="post">
+            <div class="row">
+                <label><span th:text="#{profile.lastName}">Фамилия</span>
+                    <input type="text" name="lastName" th:value="${profileUser.lastName}" required></label>
+                <label><span th:text="#{profile.firstName}">Имя</span>
+                    <input type="text" name="firstName" th:value="${profileUser.firstName}" required></label>
+            </div>
+
+            <h3 style="margin-top:1.2rem" th:text="#{profile.changePassword}">Смена пароля</h3>
+            <p class="muted small" th:text="#{profile.passwordHint}">Оставьте поля пустыми, чтобы не менять пароль.</p>
+            <div class="row">
+                <label><span th:text="#{profile.newPassword}">Новый пароль</span>
+                    <input type="password" name="password" autocomplete="new-password"></label>
+                <label><span th:text="#{profile.confirmPassword}">Повтор пароля</span>
+                    <input type="password" name="passwordConfirm" autocomplete="new-password"></label>
+            </div>
+
+            <button class="btn" type="submit" th:text="#{action.save}">Сохранить</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

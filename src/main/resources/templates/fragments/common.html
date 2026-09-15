@@ -22,12 +22,15 @@
         <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/calendar}" th:text="#{nav.calendar}">Каникулы</a>
         <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/generate}" th:text="#{nav.generate}">Генерация</a>
         <a sec:authorize="hasRole('STUDENT')" th:href="@{/student}" th:text="#{nav.studentSchedule}">Расписание</a>
+        <a th:href="@{/profile}" th:text="#{nav.profile}">Профиль</a>
     </nav>
     <span class="spacer"></span>
     <span class="lang" th:replace="~{fragments/common :: langswitch}"></span>
-    <img th:if="${me != null and me.photoName != null}" class="avatar"
-         th:src="@{/users/{id}/photo(id=${me.id})}" alt="">
-    <span class="who" sec:authentication="name"></span>
+    <a th:href="@{/profile}" th:title="#{nav.profile}">
+        <img th:if="${me != null and me.photoName != null}" class="avatar"
+             th:src="@{/users/{id}/photo(id=${me.id})}" alt="">
+    </a>
+    <a class="who" th:href="@{/profile}" sec:authentication="name"></a>
     <form th:action="@{/logout}" method="post" style="margin:0">
         <button class="btn tiny secondary" type="submit" th:text="#{action.logout}">Выйти</button>
     </form>
