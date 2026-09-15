@@ -8,10 +8,12 @@
 --   3) группа 2SN → IT Management Course, классрук (担任) — 堀内;
 --   4) 30 студентов в группу (пароль: student123);
 --   5) семестры (学期): 前期 и 後期 с датами;
+--  5b) праздники и каникулы (敬老の日, 夏休み и т.д.) — записаны в таблицу holiday
+--        с названиями: генератор их пропускает, а расписание показывает подпись;
 --   6) недельные шаблоны для ОБОИХ семестров, привязанные к term
 --        (генератор приложения выбирает паттерн по дате урока);
---   7) конкретные уроки на весь год (апр–дек): 前期 до 27.09, затем 後期
---        (лето 夏休み исключено) — так любая неделя показывает занятия.
+--   7) конкретные уроки на весь год (апр–дек): 前期 до 27.09, затем 後期,
+--        пропуская даты из holiday — так любая неделя показывает занятия/праздники.
 --
 --  ВАЖНО, проверьте перед запуском:
 --   • DATABASE — PostgreSQL. Скрипт идемпотентен (ON CONFLICT / NOT EXISTS).
@@ -93,6 +95,25 @@ SELECT v.name, v.s, v.e FROM (VALUES
 ) AS v(name, s, e)
 WHERE NOT EXISTS (SELECT 1 FROM term x WHERE x.name = v.name);
 
+-- 5b) Праздники и каникулы (записываются в БД: генератор их пропускает,
+--     а расписание показывает подпись с названием). Глобальные, даты РЕДАКТИРУЕМЫЕ.
+INSERT INTO holiday(title, start_date, end_date, course_id, school_class_id)
+SELECT v.title, v.s, v.e, NULL, NULL FROM (VALUES
+    ('昭和の日',     DATE '2026-04-29', DATE '2026-04-29'),
+    ('みどりの日',   DATE '2026-05-04', DATE '2026-05-04'),
+    ('こどもの日',   DATE '2026-05-05', DATE '2026-05-05'),
+    ('振替休日',     DATE '2026-05-06', DATE '2026-05-06'),
+    ('海の日',       DATE '2026-07-20', DATE '2026-07-20'),
+    ('夏休み',       DATE '2026-08-01', DATE '2026-08-31'),
+    ('敬老の日',     DATE '2026-09-21', DATE '2026-09-21'),
+    ('国民の休日',   DATE '2026-09-22', DATE '2026-09-22'),
+    ('秋分の日',     DATE '2026-09-23', DATE '2026-09-23'),
+    ('スポーツの日', DATE '2026-10-19', DATE '2026-10-19'),
+    ('文化の日',     DATE '2026-11-03', DATE '2026-11-03'),
+    ('勤労感謝の日', DATE '2026-11-23', DATE '2026-11-23')
+) AS v(title, s, e)
+WHERE NOT EXISTS (SELECT 1 FROM holiday h WHERE h.title = v.title AND h.start_date = v.s);
+
 -- 6) Недельные шаблоны для ОБОИХ семестров (привязаны к term) ----------------
 --    3限 13:10–14:40, 4限 14:50–16:20. Утро (1限/2限) — пусто.
 --    Генератор приложения выберет нужный паттерн по дате урока.
@@ -165,23 +186,15 @@ CROSS JOIN (VALUES (TIME '13:10', TIME '14:40'), (TIME '14:50', TIME '16:20')) A
 JOIN subject   s ON s.name = v.subj
 JOIN app_user  t ON t.username = v.teacher_user
 JOIN school_class c ON c.study_year = 2 AND c.group_code = 'SN'
-WHERE d::date <> ALL (ARRAY[
-        -- 前期 (весна)
-        DATE '2026-04-29',  -- 昭和の日
-        DATE '2026-05-04',  -- みどりの日
-        DATE '2026-05-05',  -- こどもの日
-        DATE '2026-05-06',  -- 振替休日
-        DATE '2026-07-20',  -- 海の日
-        -- 後期 (осень)
-        DATE '2026-09-21',  -- 敬老の日
-        DATE '2026-09-22',  -- 国民の休日
-        DATE '2026-09-23',  -- 秋分の日
-        DATE '2026-10-19',  -- スポーツの日 (по расписанию школы)
-        DATE '2026-11-03',  -- 文化の日
-        DATE '2026-11-23'   -- 勤労感謝の日
-    ])
-  -- Летние каникулы (夏休み) — РЕДАКТИРУЕМЫЙ диапазон:
-  AND d::date NOT BETWEEN DATE '2026-08-01' AND DATE '2026-08-31'
+  -- Пропускаем праздники и каникулы из таблицы holiday (см. блок 5b):
+  -- по группе, по её курсу или глобальные.
+WHERE NOT EXISTS (
+        SELECT 1 FROM holiday h
+        WHERE d::date BETWEEN h.start_date AND h.end_date
+          AND ( h.school_class_id = c.id
+             OR (h.school_class_id IS NULL AND h.course_id = c.course_id)
+             OR (h.school_class_id IS NULL AND h.course_id IS NULL) )
+    )
   AND NOT EXISTS (
         SELECT 1 FROM lesson l
         WHERE l.school_class_id = c.id AND l.date = d::date

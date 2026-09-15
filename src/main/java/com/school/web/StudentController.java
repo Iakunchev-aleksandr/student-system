@@ -3,6 +3,7 @@ package com.school.web;
 import com.school.model.*;
 import com.school.repo.*;
 import com.school.service.CurrentUserService;
+import com.school.service.HolidayService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -26,10 +27,12 @@ public class StudentController {
     private final StudentNoteRepository notes;
     private final TeacherCommentRepository comments;
     private final SchoolEventRepository events;
+    private final HolidayService holidayService;
 
     public StudentController(CurrentUserService currentUser, LessonRepository lessons, GradeRepository grades,
                              AttendanceRepository attendance, StudentNoteRepository notes,
-                             TeacherCommentRepository comments, SchoolEventRepository events) {
+                             TeacherCommentRepository comments, SchoolEventRepository events,
+                             HolidayService holidayService) {
         this.currentUser = currentUser;
         this.lessons = lessons;
         this.grades = grades;
@@ -37,6 +40,7 @@ public class StudentController {
         this.notes = notes;
         this.comments = comments;
         this.events = events;
+        this.holidayService = holidayService;
     }
 
     @GetMapping
@@ -55,12 +59,13 @@ public class StudentController {
                     .findBySchoolClassAndDateBetweenOrderByDateAscStartTimeAsc(clazz, monday, sunday);
             List<SchoolEvent> weekEvents = events
                     .findBySchoolClassAndDateBetweenOrderByDate(clazz, monday, sunday);
+            List<Holiday> allHolidays = holidayService.all();
             for (int i = 0; i < 7; i++) {
                 LocalDate d = monday.plusDays(i);
                 List<Lesson> dayLessons = weekLessons.stream()
                         .filter(l -> l.getDate().equals(d)).toList();
                 long ev = weekEvents.stream().filter(e -> e.getDate().equals(d)).count();
-                days.add(new WeekDay(d, dayLessons, (int) ev));
+                days.add(new WeekDay(d, dayLessons, (int) ev, holidayService.titleFor(clazz, d, allHolidays)));
             }
         }
 
@@ -99,6 +104,7 @@ public class StudentController {
         model.addAttribute("rows", rows);
         model.addAttribute("events", dayEvents);
         model.addAttribute("note", note);
+        model.addAttribute("holiday", clazz == null ? null : holidayService.titleFor(clazz, date, holidayService.all()));
         return "student/day";
     }
 

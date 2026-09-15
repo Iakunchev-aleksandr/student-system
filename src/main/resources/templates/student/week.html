@@ -16,13 +16,17 @@
     </div>
 
     <div class="grid-days">
-        <div class="day" th:each="d : ${days}" th:classappend="${d.today} ? ' today' : ''">
+        <div class="day" th:each="d : ${days}"
+             th:classappend="${(d.today ? ' today' : '') + (d.holiday != null ? ' holiday' : '')}">
             <h3>
                 <a th:href="@{/student/day(date=${d.date})}"
                    th:text="#{'day.' + ${d.date.dayOfWeek.name()}}">День</a>
                 <span class="date" th:text="${#temporals.format(d.date,'dd.MM')}"></span>
             </h3>
-            <p class="muted small" th:if="${d.lessons.isEmpty()}" th:text="#{day.none}">Нет занятий</p>
+            <p th:if="${d.holiday != null}" style="margin:.2rem 0">
+                <span class="badge-holiday" th:text="${#strings.isEmpty(d.holiday)} ? #{common.holiday} : ${d.holiday}">祝日</span>
+            </p>
+            <p class="muted small" th:if="${d.lessons.isEmpty() and d.holiday == null}" th:text="#{day.none}">Нет занятий</p>
             <div class="lesson-line" th:each="l : ${d.lessons}">
                 <span class="time" th:text="${#temporals.format(l.startTime,'HH:mm')}"></span>
                 <span th:text="${l.subject.name}">Предмет</span>

@@ -9,6 +9,10 @@
         <h1 style="margin:0" th:text="#{'day.' + ${date.dayOfWeek.name()}} + ', ' + ${#temporals.format(date,'dd.MM.yyyy')}">День</h1>
     </div>
 
+    <div class="card" th:if="${holiday != null}">
+        <span class="badge-holiday" th:text="${#strings.isEmpty(holiday)} ? #{common.holiday} : ${holiday}">祝日</span>
+    </div>
+
     <div class="card" th:if="${!events.isEmpty()}">
         <h3 th:text="#{studentDay.notifications}">Уведомления</h3>
         <div th:each="e : ${events}" style="margin:.4rem 0">

@@ -8,6 +8,7 @@ import com.school.repo.LessonRepository;
 import com.school.repo.SchoolClassRepository;
 import com.school.service.AccessService;
 import com.school.service.CurrentUserService;
+import com.school.service.HolidayService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,10 +37,11 @@ public class GroupsController {
     private final LessonRepository lessons;
     private final AttendanceRepository attendance;
     private final AppUserRepository appUsers;
+    private final HolidayService holidayService;
 
     public GroupsController(CurrentUserService currentUser, AccessService access, CourseRepository courses,
                             SchoolClassRepository classes, LessonRepository lessons, AttendanceRepository attendance,
-                            AppUserRepository appUsers) {
+                            AppUserRepository appUsers, HolidayService holidayService) {
         this.currentUser = currentUser;
         this.access = access;
         this.courses = courses;
@@ -47,6 +49,7 @@ public class GroupsController {
         this.lessons = lessons;
         this.attendance = attendance;
         this.appUsers = appUsers;
+        this.holidayService = holidayService;
     }
 
     @GetMapping
@@ -102,6 +105,7 @@ public class GroupsController {
                         .filter(l -> l.getTeacher() != null && l.getTeacher().getId().equals(user.getId()))
                         .toList();
             }
+            List<Holiday> allHolidays = holidayService.all();
             for (int i = 0; i < 7; i++) {
                 LocalDate d = monday.plusDays(i);
                 List<Lesson> ll = new ArrayList<>();
@@ -110,7 +114,7 @@ public class GroupsController {
                         ll.add(l);
                     }
                 }
-                days.add(new WeekDay(d, ll, 0));
+                days.add(new WeekDay(d, ll, 0, holidayService.titleFor(selectedClass, d, allHolidays)));
             }
 
             // Сводка посещаемости за неделю — только в полном режиме (админ / классный руководитель).

@@ -148,6 +148,8 @@ textarea { resize: vertical; min-height: 70px; }
 
 .badge-event { background: #fbeede; color: #8a5a12; border-radius: 8px; padding: .1rem .5rem; font-size: .8rem; font-weight: 600; }
 .badge-exam { background: #f7e0dd; color: #8c2f27; }
+.badge-holiday { display: inline-block; background: #f7dede; color: #8c2f27; border-radius: 8px; padding: .1rem .5rem; font-size: .8rem; font-weight: 600; }
+.day.holiday { background: #fdf4f4; }
 
 .week-nav { display: flex; gap: .75rem; align-items: center; margin-bottom: 1rem; }
 
