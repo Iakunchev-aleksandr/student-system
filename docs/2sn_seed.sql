@@ -1,0 +1,177 @@
+-- ============================================================================
+--  Наполнение данными группы 2SN (日本国際工科専門学校)
+--  Источник: 2SN前期1時間割.pdf, 2SN後期時間割.pdf, 2SN.xlsx
+--
+--  Что делает скрипт:
+--   1) курсы (на случай пустой БД), предметы;
+--   2) преподаватели из ОБОИХ расписаний (пароль: teacher123);
+--   3) группа 2SN → IT Management Course, классрук (担任) — 堀内;
+--   4) 30 студентов в группу (пароль: student123);
+--   5) семестры (学期): 前期 и 後期 с датами;
+--   6) недельные шаблоны для ОБОИХ семестров, привязанные к term
+--        (генератор приложения выбирает паттерн по дате урока);
+--   7) конкретные уроки на текущий период (сен–дек): 前期 до 27.09,
+--        затем 後期 — так текущая неделя сразу показывает занятия.
+--
+--  ВАЖНО, проверьте перед запуском:
+--   • DATABASE — PostgreSQL. Скрипт идемпотентен (ON CONFLICT / NOT EXISTS).
+--   • Диапазоны семестров и списки праздников заданы ниже как редактируемые
+--     значения — сверьте с PDF и поправьте при необходимости.
+--   • Пароли демонстрационные (teacher123 / student123) — смените после входа.
+--   • Логины: преподаватели — латиницей по фамилии; студенты — 2sn01..2sn30.
+-- ============================================================================
+
+BEGIN;
+
+-- 1) Курсы (совпадают с сидером приложения) и предметы -----------------------
+INSERT INTO course(name, order_index) VALUES
+    ('Business Management Course', 0),
+    ('IT Management Course',       1),
+    ('Hotel Management Course',    2)
+ON CONFLICT (name) DO NOTHING;
+
+INSERT INTO subject(name) VALUES
+    ('ICTマネジメント'), ('ICT実務'), ('Web'), ('キャリア'), ('翻訳')
+ON CONFLICT (name) DO NOTHING;
+
+-- 2) Преподаватели (пароль teacher123) --------------------------------------
+--    堀内 — классрук; остальные — обычные преподаватели.
+--    末永/黒田 ведут в 後期; 橋本/土谷/宮嶋 — в 前期; 堀内 — в обоих.
+INSERT INTO app_user(username, password, last_name, first_name, role) VALUES
+    ('horiuchi',  '$2a$10$bD/6pi48qOfiPEYj7BEpm.82NUp5odK/wmd1/thvZnAua6imFIRBm', '堀内', '',   'TEACHER'),
+    ('suenaga',   '$2a$10$bD/6pi48qOfiPEYj7BEpm.82NUp5odK/wmd1/thvZnAua6imFIRBm', '末永', '',   'TEACHER'),
+    ('kuroda',    '$2a$10$bD/6pi48qOfiPEYj7BEpm.82NUp5odK/wmd1/thvZnAua6imFIRBm', '黒田', '啓', 'TEACHER'),
+    ('hashimoto', '$2a$10$bD/6pi48qOfiPEYj7BEpm.82NUp5odK/wmd1/thvZnAua6imFIRBm', '橋本', '',   'TEACHER'),
+    ('tsuchiya',  '$2a$10$bD/6pi48qOfiPEYj7BEpm.82NUp5odK/wmd1/thvZnAua6imFIRBm', '土谷', '',   'TEACHER'),
+    ('miyajima',  '$2a$10$bD/6pi48qOfiPEYj7BEpm.82NUp5odK/wmd1/thvZnAua6imFIRBm', '宮嶋', '',   'TEACHER')
+ON CONFLICT (username) DO NOTHING;
+
+-- 3) Группа 2SN (IT Management Course, классрук — 堀内) ----------------------
+INSERT INTO school_class(study_year, group_code, course_id, supervisor_id)
+SELECT 2, 'SN',
+       (SELECT id FROM course   WHERE name = 'IT Management Course'),
+       (SELECT id FROM app_user WHERE username = 'horiuchi')
+WHERE NOT EXISTS (SELECT 1 FROM school_class WHERE study_year = 2 AND group_code = 'SN');
+
+-- 4) Студенты (30, пароль student123) ---------------------------------------
+INSERT INTO app_user(username, password, last_name, first_name, role, school_class_id)
+SELECT v.username,
+       '$2a$10$n2hY4w9iE7068hLOBdqh0usAt4/bxpgTii4DftU7KoviNEkjv5F2K',
+       v.name, '', 'STUDENT',
+       (SELECT id FROM school_class WHERE study_year = 2 AND group_code = 'SN')
+FROM (VALUES
+    ('2sn01','ヴー'),          ('2sn02','ナズムル'),   ('2sn03','パトゥム'),
+    ('2sn04','ビサル'),        ('2sn05','シラ'),       ('2sn06','ビベク'),
+    ('2sn07','ビピン'),        ('2sn08','クムディ'),   ('2sn09','アレクス'),
+    ('2sn10','スディパ'),      ('2sn11','ミダ'),       ('2sn12','イスル'),
+    ('2sn13','チン ヒュウ ハイ'), ('2sn14','ディパン'),  ('2sn15','リン'),
+    ('2sn16','プリタム'),      ('2sn17','ルペシュ'),   ('2sn18','ワトサラ'),
+    ('2sn19','ビベク'),        ('2sn20','アディカリ'), ('2sn21','タルシ'),
+    ('2sn22','ヴィヴェク'),    ('2sn23','ディムトゥ'), ('2sn24','ロシャニ'),
+    ('2sn25','スレスタ'),      ('2sn26','プージャニ'), ('2sn27','アイン'),
+    ('2sn28','ホアン'),        ('2sn29','カッム'),     ('2sn30','アントン')
+) AS v(username, name)
+ON CONFLICT (username) DO NOTHING;
+
+-- 5) Семестры (学期) — задают, какой недельный паттерн действует в какие даты -
+--    ДАТЫ РЕДАКТИРУЕМЫЕ. 前期 действует до начала 後期 (28.09), включая текущую неделю.
+INSERT INTO term(name, start_date, end_date)
+SELECT v.name, v.s, v.e FROM (VALUES
+    ('前期', DATE '2026-04-01', DATE '2026-09-27'),
+    ('後期', DATE '2026-09-28', DATE '2027-03-31')
+) AS v(name, s, e)
+WHERE NOT EXISTS (SELECT 1 FROM term x WHERE x.name = v.name);
+
+-- 6) Недельные шаблоны для ОБОИХ семестров (привязаны к term) ----------------
+--    3限 13:10–14:40, 4限 14:50–16:20. Утро (1限/2限) — пусто.
+--    Генератор приложения выберет нужный паттерн по дате урока.
+
+-- Чистим слоты 2SN БЕЗ семестра (напр. от предыдущего запуска скрипта): без
+-- привязки к term они действовали бы круглый год и конфликтовали с семестрами.
+DELETE FROM schedule_template st
+USING school_class c
+WHERE st.school_class_id = c.id AND c.study_year = 2 AND c.group_code = 'SN'
+  AND st.term_id IS NULL;
+
+INSERT INTO schedule_template(school_class_id, subject_id, teacher_id, term_id, day_of_week, start_time, end_time, room)
+SELECT c.id, s.id, t.id, tm.id, v.dow, v.st::time, v.en::time, v.room
+FROM (VALUES
+    -- 前期 (весна): Пн ICTマネ/822/橋本, Вт ICT実務/811/土谷, Ср キャリア/823/堀内, Чт Web/811/宮嶋, Пт 翻訳/822/堀内
+    ('前期','MONDAY',   '13:10','14:40','ICTマネジメント','822','hashimoto'),
+    ('前期','MONDAY',   '14:50','16:20','ICTマネジメント','822','hashimoto'),
+    ('前期','TUESDAY',  '13:10','14:40','ICT実務',        '811','tsuchiya'),
+    ('前期','TUESDAY',  '14:50','16:20','ICT実務',        '811','tsuchiya'),
+    ('前期','WEDNESDAY','13:10','14:40','キャリア',        '823','horiuchi'),
+    ('前期','WEDNESDAY','14:50','16:20','キャリア',        '823','horiuchi'),
+    ('前期','THURSDAY', '13:10','14:40','Web',            '811','miyajima'),
+    ('前期','THURSDAY', '14:50','16:20','Web',            '811','miyajima'),
+    ('前期','FRIDAY',   '13:10','14:40','翻訳',            '822','horiuchi'),
+    ('前期','FRIDAY',   '14:50','16:20','翻訳',            '822','horiuchi'),
+    -- 後期 (осень): Пн ICTマネ/842/末永, Вт キャリア/831/堀内, Ср ICT実務/811/黒田, Чт Web/811/黒田, Пт 翻訳/142/堀内
+    ('後期','MONDAY',   '13:10','14:40','ICTマネジメント','842','suenaga'),
+    ('後期','MONDAY',   '14:50','16:20','ICTマネジメント','842','suenaga'),
+    ('後期','TUESDAY',  '13:10','14:40','キャリア',        '831','horiuchi'),
+    ('後期','TUESDAY',  '14:50','16:20','キャリア',        '831','horiuchi'),
+    ('後期','WEDNESDAY','13:10','14:40','ICT実務',         '811','kuroda'),
+    ('後期','WEDNESDAY','14:50','16:20','ICT実務',         '811','kuroda'),
+    ('後期','THURSDAY', '13:10','14:40','Web',            '811','kuroda'),
+    ('後期','THURSDAY', '14:50','16:20','Web',            '811','kuroda'),
+    ('後期','FRIDAY',   '13:10','14:40','翻訳',            '142','horiuchi'),
+    ('後期','FRIDAY',   '14:50','16:20','翻訳',            '142','horiuchi')
+) AS v(term, dow, st, en, subj, room, teacher_user)
+JOIN term      tm ON tm.name = v.term
+JOIN subject   s  ON s.name = v.subj
+JOIN app_user  t  ON t.username = v.teacher_user
+JOIN school_class c ON c.study_year = 2 AND c.group_code = 'SN'
+WHERE NOT EXISTS (
+    SELECT 1 FROM schedule_template x
+    WHERE x.school_class_id = c.id AND x.term_id = tm.id AND x.day_of_week = v.dow
+      AND x.start_time = v.st::time AND x.subject_id = s.id
+);
+
+-- 7) Конкретные уроки на текущий период (сен–дек), паттерн выбирается по семестру
+--    Диапазон и праздники — РЕДАКТИРУЕМЫЕ. Паттерн переключается на границе 27/28.09.
+--    (Другие периоды можно доработать в приложении: «Генерация» теперь учитывает семестры.)
+INSERT INTO lesson(date, start_time, end_time, school_class_id, subject_id, teacher_id, room)
+SELECT d::date, p.st, p.en, c.id, s.id, t.id, v.room
+FROM generate_series(DATE '2026-09-01', DATE '2026-12-23', INTERVAL '1 day') AS d
+JOIN (VALUES
+    -- 前期 (до 27.09)
+    (DATE '2026-04-01', DATE '2026-09-27', 1,'ICTマネジメント','822','hashimoto'),
+    (DATE '2026-04-01', DATE '2026-09-27', 2,'ICT実務',        '811','tsuchiya'),
+    (DATE '2026-04-01', DATE '2026-09-27', 3,'キャリア',        '823','horiuchi'),
+    (DATE '2026-04-01', DATE '2026-09-27', 4,'Web',            '811','miyajima'),
+    (DATE '2026-04-01', DATE '2026-09-27', 5,'翻訳',            '822','horiuchi'),
+    -- 後期 (с 28.09)
+    (DATE '2026-09-28', DATE '2027-03-31', 1,'ICTマネジメント','842','suenaga'),
+    (DATE '2026-09-28', DATE '2027-03-31', 2,'キャリア',        '831','horiuchi'),
+    (DATE '2026-09-28', DATE '2027-03-31', 3,'ICT実務',         '811','kuroda'),
+    (DATE '2026-09-28', DATE '2027-03-31', 4,'Web',            '811','kuroda'),
+    (DATE '2026-09-28', DATE '2027-03-31', 5,'翻訳',            '142','horiuchi')
+) AS v(tstart, tend, dow, subj, room, teacher_user)
+     ON v.dow = EXTRACT(ISODOW FROM d) AND d::date BETWEEN v.tstart AND v.tend
+CROSS JOIN (VALUES (TIME '13:10', TIME '14:40'), (TIME '14:50', TIME '16:20')) AS p(st, en)
+JOIN subject   s ON s.name = v.subj
+JOIN app_user  t ON t.username = v.teacher_user
+JOIN school_class c ON c.study_year = 2 AND c.group_code = 'SN'
+WHERE d::date <> ALL (ARRAY[
+        DATE '2026-09-21',  -- 敬老の日
+        DATE '2026-09-22',  -- 国民の休日
+        DATE '2026-09-23',  -- 秋分の日
+        DATE '2026-10-19',  -- スポーツの日 (по расписанию школы)
+        DATE '2026-11-03',  -- 文化の日
+        DATE '2026-11-23'   -- 勤労感謝の日
+    ])
+  AND NOT EXISTS (
+        SELECT 1 FROM lesson l
+        WHERE l.school_class_id = c.id AND l.date = d::date
+          AND l.start_time = p.st AND l.subject_id = s.id
+  );
+
+COMMIT;
+
+-- Проверка после запуска:
+--   SELECT count(*) FROM app_user WHERE role='TEACHER';                     -- +6
+--   SELECT count(*) FROM app_user WHERE role='STUDENT';                     -- 30
+--   SELECT count(*) FROM lesson  l JOIN school_class c ON c.id=l.school_class_id
+--     WHERE c.study_year=2 AND c.group_code='SN';                            -- уроки обоих семестров
