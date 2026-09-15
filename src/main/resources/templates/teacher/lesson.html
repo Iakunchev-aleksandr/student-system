@@ -18,7 +18,11 @@
                 <tr th:each="r : ${rows}">
                     <td th:text="${r.student.fullName}">ФИО</td>
                     <td>
-                        <input type="number" min="2" max="5" th:name="'grade_' + ${r.student.id}" th:value="${r.grade}">
+                        <select th:name="'grade_' + ${r.student.id}">
+                            <option value="">—</option>
+                            <option th:each="lt : ${@gradeScale.letters()}" th:value="${lt}" th:text="${lt}"
+                                    th:selected="${@gradeScale.letter(r.grade) == lt}"></option>
+                        </select>
                     </td>
                     <td>
                         <select th:name="'att_' + ${r.student.id}">

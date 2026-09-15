@@ -34,11 +34,12 @@ public class TeacherController {
     private final TeacherCommentRepository comments;
     private final SchoolEventRepository events;
     private final StudentNoteRepository notes;
+    private final GradeScale gradeScale;
 
     public TeacherController(CurrentUserService currentUser, AccessService access, AppUserRepository appUsers,
                              SchoolClassRepository classes, LessonRepository lessons, GradeRepository grades,
                              AttendanceRepository attendance, TeacherCommentRepository comments,
-                             SchoolEventRepository events, StudentNoteRepository notes) {
+                             SchoolEventRepository events, StudentNoteRepository notes, GradeScale gradeScale) {
         this.currentUser = currentUser;
         this.access = access;
         this.appUsers = appUsers;
@@ -49,6 +50,7 @@ public class TeacherController {
         this.comments = comments;
         this.events = events;
         this.notes = notes;
+        this.gradeScale = gradeScale;
     }
 
     // Прежняя стартовая страница преподавателя заменена вкладкой «Группы».
@@ -98,11 +100,12 @@ public class TeacherController {
             String gradeStr = params.get("grade_" + s.getId());
             String attStr = params.get("att_" + s.getId());
 
-            if (gradeStr != null && !gradeStr.isBlank()) {
+            Integer gradeValue = gradeScale.value(gradeStr);
+            if (gradeValue != null) {
                 Grade g = grades.findByStudentAndLesson(s, lesson).orElseGet(Grade::new);
                 g.setStudent(s);
                 g.setLesson(lesson);
-                g.setValue(Integer.parseInt(gradeStr));
+                g.setValue(gradeValue);
                 grades.save(g);
             }
             if (attStr != null && !attStr.isBlank()) {

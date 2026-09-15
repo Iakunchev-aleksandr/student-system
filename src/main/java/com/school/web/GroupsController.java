@@ -2,8 +2,8 @@ package com.school.web;
 
 import com.school.model.*;
 import com.school.repo.AppUserRepository;
+import com.school.repo.AttendanceRepository;
 import com.school.repo.CourseRepository;
-import com.school.repo.GradeRepository;
 import com.school.repo.LessonRepository;
 import com.school.repo.SchoolClassRepository;
 import com.school.service.AccessService;
@@ -34,18 +34,18 @@ public class GroupsController {
     private final CourseRepository courses;
     private final SchoolClassRepository classes;
     private final LessonRepository lessons;
-    private final GradeRepository grades;
+    private final AttendanceRepository attendance;
     private final AppUserRepository appUsers;
 
     public GroupsController(CurrentUserService currentUser, AccessService access, CourseRepository courses,
-                            SchoolClassRepository classes, LessonRepository lessons, GradeRepository grades,
+                            SchoolClassRepository classes, LessonRepository lessons, AttendanceRepository attendance,
                             AppUserRepository appUsers) {
         this.currentUser = currentUser;
         this.access = access;
         this.courses = courses;
         this.classes = classes;
         this.lessons = lessons;
-        this.grades = grades;
+        this.attendance = attendance;
         this.appUsers = appUsers;
     }
 
@@ -92,7 +92,7 @@ public class GroupsController {
         List<WeekDay> days = new ArrayList<>();
         List<Lesson> weekLessons = new ArrayList<>();
         List<AppUser> students = List.of();
-        List<ClassGradeRow> gradeRows = new ArrayList<>();
+        List<ClassAttendanceRow> attendanceRows = new ArrayList<>();
 
         if (selectedClass != null) {
             viewMode = access.viewMode(user, selectedClass);
@@ -113,28 +113,26 @@ public class GroupsController {
                 days.add(new WeekDay(d, ll, 0));
             }
 
-            // Сводка оценок за неделю — только в полном режиме (админ / классный руководитель).
+            // Сводка посещаемости за неделю — только в полном режиме (админ / классный руководитель).
             if (viewMode == AccessService.ViewMode.FULL) {
                 students = appUsers.findBySchoolClassOrderByLastNameAscFirstNameAsc(selectedClass);
-                Map<Long, Map<Long, Integer>> gradeIndex = new LinkedHashMap<>();
-                for (Grade g : grades.findByLesson_SchoolClassAndLesson_DateBetween(selectedClass, monday, sunday)) {
-                    gradeIndex.computeIfAbsent(g.getStudent().getId(), k -> new LinkedHashMap<>())
-                            .put(g.getLesson().getId(), g.getValue());
+                Map<Long, Map<Long, AttendanceStatus>> attIndex = new LinkedHashMap<>();
+                for (Attendance a : attendance.findByLesson_SchoolClassAndLesson_DateBetween(selectedClass, monday, sunday)) {
+                    attIndex.computeIfAbsent(a.getStudent().getId(), k -> new LinkedHashMap<>())
+                            .put(a.getLesson().getId(), a.getStatus());
                 }
                 for (AppUser s : students) {
-                    Map<Long, Integer> byLesson = gradeIndex.getOrDefault(s.getId(), Map.of());
-                    List<Integer> cells = new ArrayList<>();
-                    int sum = 0, count = 0;
+                    Map<Long, AttendanceStatus> byLesson = attIndex.getOrDefault(s.getId(), Map.of());
+                    List<AttendanceStatus> cells = new ArrayList<>();
+                    int present = 0;
                     for (Lesson l : weekLessons) {
-                        Integer v = byLesson.get(l.getId());
-                        cells.add(v);
-                        if (v != null) {
-                            sum += v;
-                            count++;
+                        AttendanceStatus st = byLesson.get(l.getId());
+                        cells.add(st);
+                        if (st == AttendanceStatus.PRESENT || st == AttendanceStatus.LATE) {
+                            present++;
                         }
                     }
-                    Double average = count == 0 ? null : Math.round((double) sum / count * 100) / 100.0;
-                    gradeRows.add(new ClassGradeRow(s, cells, average));
+                    attendanceRows.add(new ClassAttendanceRow(s, cells, present, weekLessons.size()));
                 }
             }
         }
@@ -147,8 +145,8 @@ public class GroupsController {
         model.addAttribute("days", days);
         model.addAttribute("full", viewMode == AccessService.ViewMode.FULL);
         model.addAttribute("students", students);
-        model.addAttribute("gradeLessons", weekLessons);
-        model.addAttribute("gradeRows", gradeRows);
+        model.addAttribute("summaryLessons", weekLessons);
+        model.addAttribute("attendanceRows", attendanceRows);
         model.addAttribute("week", week);
         model.addAttribute("monday", monday);
         model.addAttribute("sunday", sunday);

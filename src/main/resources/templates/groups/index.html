@@ -63,34 +63,41 @@
                 </div>
             </div>
 
-            <!-- Сводка оценок (полный режим: админ или классный руководитель) -->
+            <!-- Сводка посещаемости (полный режим: админ или классный руководитель) -->
             <div class="card" th:if="${full}">
-                <h3 th:text="#{groups.grades}">Оценки за неделю</h3>
-                <p class="muted small" th:if="${gradeLessons.isEmpty()}" th:text="#{groups.noGrades}">Оценок за эту неделю пока нет.</p>
-                <div th:unless="${gradeLessons.isEmpty()}" style="overflow-x:auto">
+                <h3 th:text="#{groups.attendance}">Посещаемость за неделю</h3>
+                <p class="muted small" th:if="${summaryLessons.isEmpty()}" th:text="#{groups.noLessons}">Занятий за эту неделю нет.</p>
+                <div th:unless="${summaryLessons.isEmpty()}" style="overflow-x:auto">
                     <table class="grades-table">
                         <thead>
                         <tr>
                             <th th:text="#{groups.studentCol}">Студент</th>
-                            <th th:each="l : ${gradeLessons}">
+                            <th th:each="l : ${summaryLessons}">
                                 <span th:text="${l.subject.name}">Предмет</span><br>
-                                <span class="muted small" th:text="${#temporals.format(l.date,'dd.MM')}"></span>
+                                <span class="muted small" th:text="${#temporals.format(l.date,'dd.MM')} + ' ' + ${#temporals.format(l.startTime,'HH:mm')}"></span>
                             </th>
-                            <th th:text="#{groups.average}">Средний балл</th>
+                            <th th:text="#{groups.attended}">Посещено</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr th:each="row : ${gradeRows}">
+                        <tr th:each="row : ${attendanceRows}">
                             <td th:text="${row.student.fullName}">ФИО</td>
-                            <td th:each="g : ${row.grades}">
-                                <span th:if="${g != null}" class="pill grade" th:text="${g}">5</span>
-                                <span th:if="${g == null}" class="muted">·</span>
+                            <td th:each="st : ${row.cells}">
+                                <span th:if="${st != null}" class="dot" th:classappend="${st.name()}"
+                                      th:title="#{'attendance.' + ${st.name()}}"></span>
+                                <span th:if="${st == null}" class="muted">·</span>
                             </td>
-                            <td th:text="${row.average != null ? row.average : '—'}">—</td>
+                            <td th:text="${row.present} + ' / ' + ${row.total}">0 / 0</td>
                         </tr>
                         </tbody>
                     </table>
                 </div>
+                <p class="muted small" style="margin-top:.6rem">
+                    <span class="dot PRESENT"></span> <span th:text="#{attendance.PRESENT}">出席</span>&nbsp;
+                    <span class="dot LATE"></span> <span th:text="#{attendance.LATE}">遅刻</span>&nbsp;
+                    <span class="dot ABSENT"></span> <span th:text="#{attendance.ABSENT}">欠席</span>&nbsp;
+                    <span class="dot EXCUSED"></span> <span th:text="#{attendance.EXCUSED}">公欠</span>
+                </p>
             </div>
         </div>
     </div>
