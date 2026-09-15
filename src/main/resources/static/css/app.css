@@ -1,11 +1,11 @@
 :root {
-  --paper: #f5f1e8;
+  --paper: #eef4fb;
   --surface: #ffffff;
-  --ink: #2a2723;
-  --muted: #6b655b;
-  --line: #e2dccd;
-  --accent: #145a4c;
-  --accent-soft: #e4efe9;
+  --ink: #1f2933;
+  --muted: #5a6b7b;
+  --line: #d6e3f0;
+  --accent: #1c7ed6;
+  --accent-soft: #e7f2fc;
   --present: #2f7d32;
   --late: #b6791b;
   --absent: #b23a30;
@@ -50,7 +50,7 @@ a:hover { text-decoration: underline; }
   font-family: Georgia, serif;
   font-weight: 600;
   font-size: 1.1rem;
-  color: var(--ink);
+  color: var(--accent);
   margin-right: .5rem;
 }
 .topbar nav { display: flex; gap: 1rem; flex-wrap: wrap; }
