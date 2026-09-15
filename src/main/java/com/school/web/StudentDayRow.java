@@ -22,6 +22,7 @@ public class StudentDayRow {
 
     public Lesson getLesson() { return lesson; }
     public Integer getGrade() { return grade; }
+    public String getGradeLetter() { return GradeScale.toLetter(grade); }
     public AttendanceStatus getAttendance() { return attendance; }
     public List<TeacherComment> getComments() { return comments; }
 }

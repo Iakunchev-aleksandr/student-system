@@ -3,11 +3,14 @@ package com.school.web;
 import org.springframework.stereotype.Component;
 
 // Перевод оценок между внутренним числовым представлением (2..5) и буквенным (A..D).
-// A=5 (лучшая), B=4, C=3, D=2. Доступен в шаблонах как @gradeScale.
+// A=5 (лучшая), B=4, C=3, D=2.
 @Component("gradeScale")
 public class GradeScale {
 
-    public String letter(Integer value) {
+    // Буквы от лучшей к худшей — для выпадающих списков.
+    public static final String[] LETTERS = {"A", "B", "C", "D"};
+
+    public static String toLetter(Integer value) {
         if (value == null) {
             return null;
         }
@@ -20,7 +23,7 @@ public class GradeScale {
         };
     }
 
-    public Integer value(String letter) {
+    public static Integer toValue(String letter) {
         if (letter == null) {
             return null;
         }
@@ -33,8 +36,8 @@ public class GradeScale {
         };
     }
 
-    // Список букв для выпадающих списков (от лучшей к худшей).
-    public String[] letters() {
-        return new String[] {"A", "B", "C", "D"};
-    }
+    // Инстанс-методы (используются в контроллере).
+    public String letter(Integer value) { return toLetter(value); }
+    public Integer value(String letter) { return toValue(letter); }
+    public String[] letters() { return LETTERS; }
 }

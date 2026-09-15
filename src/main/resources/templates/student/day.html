@@ -29,7 +29,7 @@
         </p>
 
         <p>
-            <span th:if="${row.grade != null}"><span th:text="#{studentDay.grade}">Оценка:</span> <span class="pill grade" th:text="${@gradeScale.letter(row.grade)}">A</span></span>
+            <span th:if="${row.grade != null}"><span th:text="#{studentDay.grade}">Оценка:</span> <span class="pill grade" th:text="${row.gradeLetter}">A</span></span>
             <span th:if="${row.grade == null}" class="muted" th:text="#{studentDay.noGrade}">Оценки нет</span>
             &nbsp;·&nbsp;
             <span th:if="${row.attendance != null}">

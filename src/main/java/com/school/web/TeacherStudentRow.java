@@ -17,6 +17,7 @@ public class TeacherStudentRow {
 
     public AppUser getStudent() { return student; }
     public Integer getGrade() { return grade; }
+    public String getGradeLetter() { return GradeScale.toLetter(grade); }
     public AttendanceStatus getAttendance() { return attendance; }
     public String getAttendanceName() { return attendance == null ? "" : attendance.name(); }
 }

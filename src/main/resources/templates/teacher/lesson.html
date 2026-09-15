@@ -20,8 +20,10 @@
                     <td>
                         <select th:name="'grade_' + ${r.student.id}">
                             <option value="">—</option>
-                            <option th:each="lt : ${@gradeScale.letters()}" th:value="${lt}" th:text="${lt}"
-                                    th:selected="${@gradeScale.letter(r.grade) == lt}"></option>
+                            <option value="A" th:selected="${r.gradeLetter == 'A'}">A</option>
+                            <option value="B" th:selected="${r.gradeLetter == 'B'}">B</option>
+                            <option value="C" th:selected="${r.gradeLetter == 'C'}">C</option>
+                            <option value="D" th:selected="${r.gradeLetter == 'D'}">D</option>
                         </select>
                     </td>
                     <td>
