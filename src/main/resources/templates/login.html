@@ -17,6 +17,7 @@
             <div th:if="${param.error}" class="error" th:text="#{login.error}">Неверный логин или пароль.</div>
             <div th:if="${param.logout}" class="notice" style="margin-top:.6rem" th:text="#{login.loggedout}">Вы вышли из системы.</div>
             <div th:if="${param.reset}" class="notice" style="margin-top:.6rem" th:text="#{login.resetDone}">Пароль изменён.</div>
+            <div th:if="${param.expired}" class="error" th:text="#{login.expired}">Сессия истекла. Войдите снова.</div>
             <button class="btn" type="submit" style="width:100%" th:text="#{login.submit}">Войти</button>
         </form>
         <p class="small" style="margin-top:.8rem; text-align:center">

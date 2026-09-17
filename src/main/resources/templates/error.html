@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head(#{error.heading})}"></head>
+<body>
+<div class="login-wrap">
+    <div class="lang-login">
+        <span th:replace="~{fragments/common :: langswitch}"></span>
+    </div>
+    <h1 th:text="#{error.heading}">Ошибка</h1>
+    <div class="card" style="text-align:center">
+        <p style="font-size:2.4rem; font-weight:700; color:var(--accent); margin:.2rem 0"
+           th:text="${status} ?: '—'">500</p>
+        <p class="muted" th:text="#{error.message}">Что-то пошло не так.</p>
+        <p style="margin-top:1rem">
+            <a class="btn" th:href="@{/login}" th:text="#{error.backHome}">Ко входу</a>
+        </p>
+    </div>
+</div>
+</body>
+</html>
