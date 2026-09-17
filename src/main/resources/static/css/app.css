@@ -91,7 +91,7 @@ th, td { text-align: left; padding: .55rem .5rem; border-bottom: 1px solid var(-
 th { font-size: .82rem; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); font-weight: 600; }
 
 label { display: block; font-size: .85rem; color: var(--muted); margin: .6rem 0 .2rem; }
-input[type=text], input[type=password], input[type=time], input[type=date], input[type=number], select, textarea {
+input[type=text], input[type=email], input[type=password], input[type=time], input[type=date], input[type=number], select, textarea {
   width: 100%;
   padding: .5rem .6rem;
   border: 1px solid var(--line);
