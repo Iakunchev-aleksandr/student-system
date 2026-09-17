@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.Locale;
@@ -34,6 +35,8 @@ public class MailService {
     }
 
     // Письмо со ссылкой сброса пароля (текст — на японском, языке продукта).
+    // Асинхронно: HTTP-запрос /forgot не ждёт SMTP и отвечает мгновенно.
+    @Async
     public void sendPasswordReset(String to, String link) {
         String subject = messages.getMessage("mail.reset.subject", null, Locale.JAPANESE);
         String body = messages.getMessage("mail.reset.body", new Object[]{link}, Locale.JAPANESE);
