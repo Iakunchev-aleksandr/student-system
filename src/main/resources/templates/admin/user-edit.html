@@ -25,6 +25,8 @@
                 <div><label th:text="#{users.firstName}">Имя</label>
                     <input type="text" name="firstName" th:value="${editUser.firstName}" required></div>
             </div>
+            <div><label th:text="#{users.email}">Email</label>
+                <input type="email" name="email" th:value="${editUser.email}"></div>
             <div class="row">
                 <div>
                     <label th:text="#{users.role}">Роль</label>

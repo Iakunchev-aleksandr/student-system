@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head(#{page.reset})}"></head>
+<body>
+<div class="login-wrap">
+    <div class="lang-login">
+        <span th:replace="~{fragments/common :: langswitch}"></span>
+    </div>
+    <h1 th:text="#{reset.heading}">Новый пароль</h1>
+    <div class="card">
+        <div th:replace="~{fragments/common :: flash}"></div>
+
+        <div th:unless="${valid}">
+            <p class="error" th:text="#{reset.invalid}">Ссылка недействительна или устарела.</p>
+            <p class="small" style="margin-top:.8rem">
+                <a th:href="@{/forgot}" th:text="#{reset.requestNew}">Запросить новую ссылку</a>
+            </p>
+        </div>
+
+        <form th:if="${valid}" th:action="@{/reset}" method="post">
+            <input type="hidden" name="token" th:value="${token}">
+            <label for="password" th:text="#{reset.newPassword}">Новый пароль</label>
+            <input type="password" id="password" name="password" autocomplete="new-password" autofocus required>
+            <label for="passwordConfirm" th:text="#{reset.confirm}">Повтор пароля</label>
+            <input type="password" id="passwordConfirm" name="passwordConfirm" autocomplete="new-password" required>
+            <button class="btn" type="submit" style="width:100%" th:text="#{reset.submit}">Сохранить</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

@@ -35,7 +35,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationSuccessHandler successHandler) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/login", "/css/**", "/error").permitAll()
+                .requestMatchers("/login", "/forgot", "/reset", "/css/**", "/error").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 // Единая вкладка «Группы» — для преподавателей и админа.
                 .requestMatchers("/groups/**").hasAnyRole("TEACHER", "ADMIN")

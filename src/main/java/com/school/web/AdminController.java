@@ -94,7 +94,8 @@ public class AdminController {
     @PostMapping("/users")
     public String createUser(@RequestParam String username, @RequestParam String password,
                              @RequestParam String lastName, @RequestParam String firstName,
-                             @RequestParam Role role, @RequestParam(required = false) Long schoolClassId,
+                             @RequestParam Role role, @RequestParam(required = false) String email,
+                             @RequestParam(required = false) Long schoolClassId,
                              @RequestParam(required = false) String studentNumber,
                              @RequestParam(required = false) MultipartFile photo,
                              RedirectAttributes ra) {
@@ -119,6 +120,7 @@ public class AdminController {
         u.setLastName(lastName);
         u.setFirstName(firstName);
         u.setRole(role);
+        u.setEmail(email != null && !email.isBlank() ? email.trim() : null);
         if (role == Role.STUDENT) {
             u.setStudentNumber(studentNumber.trim());
             if (schoolClassId != null) {
@@ -147,7 +149,8 @@ public class AdminController {
     public String updateUser(@PathVariable Long id, @RequestParam String username,
                              @RequestParam(required = false) String password,
                              @RequestParam String lastName, @RequestParam String firstName,
-                             @RequestParam Role role, @RequestParam(required = false) Long schoolClassId,
+                             @RequestParam Role role, @RequestParam(required = false) String email,
+                             @RequestParam(required = false) Long schoolClassId,
                              @RequestParam(required = false) String studentNumber,
                              @RequestParam(required = false) MultipartFile photo,
                              RedirectAttributes ra) {
@@ -167,6 +170,7 @@ public class AdminController {
         u.setLastName(lastName);
         u.setFirstName(firstName);
         u.setRole(role);
+        u.setEmail(email != null && !email.isBlank() ? email.trim() : null);
         if (password != null && !password.isBlank()) {
             u.setPassword(encoder.encode(password));
         }

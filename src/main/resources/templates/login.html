@@ -16,8 +16,12 @@
             <input type="password" id="password" name="password" required>
             <div th:if="${param.error}" class="error" th:text="#{login.error}">Неверный логин или пароль.</div>
             <div th:if="${param.logout}" class="notice" style="margin-top:.6rem" th:text="#{login.loggedout}">Вы вышли из системы.</div>
+            <div th:if="${param.reset}" class="notice" style="margin-top:.6rem" th:text="#{login.resetDone}">Пароль изменён.</div>
             <button class="btn" type="submit" style="width:100%" th:text="#{login.submit}">Войти</button>
         </form>
+        <p class="small" style="margin-top:.8rem; text-align:center">
+            <a th:href="@{/forgot}" th:text="#{login.forgot}">Забыли пароль?</a>
+        </p>
     </div>
 </div>
 </body>

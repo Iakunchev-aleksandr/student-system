@@ -10,6 +10,7 @@ import java.util.Optional;
 
 public interface AppUserRepository extends JpaRepository<AppUser, Long> {
     Optional<AppUser> findByUsername(String username);
+    Optional<AppUser> findByEmailIgnoreCase(String email);
     List<AppUser> findByRole(Role role);
     List<AppUser> findBySchoolClassOrderByLastNameAscFirstNameAsc(SchoolClass schoolClass);
     List<AppUser> findByRoleOrderByLastNameAscFirstNameAsc(Role role);

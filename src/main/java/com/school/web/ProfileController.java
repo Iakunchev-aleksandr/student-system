@@ -41,6 +41,7 @@ public class ProfileController {
 
     @PostMapping
     public String save(@RequestParam String lastName, @RequestParam String firstName,
+                       @RequestParam(required = false) String email,
                        @RequestParam(required = false) String password,
                        @RequestParam(required = false) String passwordConfirm,
                        Principal principal, RedirectAttributes ra) {
@@ -52,6 +53,7 @@ public class ProfileController {
         }
         user.setLastName(lastName.trim());
         user.setFirstName(firstName.trim());
+        user.setEmail(email != null && !email.isBlank() ? email.trim() : null);
 
         if (password != null && !password.isBlank()) {
             if (!password.equals(passwordConfirm)) {

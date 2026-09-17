@@ -21,6 +21,9 @@
                 <label><span th:text="#{profile.firstName}">Имя</span>
                     <input type="text" name="firstName" th:value="${profileUser.firstName}" required></label>
             </div>
+            <label><span th:text="#{profile.email}">Email</span>
+                <input type="email" name="email" th:value="${profileUser.email}"></label>
+            <p class="muted small" th:text="#{profile.emailHint}">Email нужен для восстановления пароля.</p>
 
             <h3 style="margin-top:1.2rem" th:text="#{profile.changePassword}">Смена пароля</h3>
             <p class="muted small" th:text="#{profile.passwordHint}">Оставьте поля пустыми, чтобы не менять пароль.</p>

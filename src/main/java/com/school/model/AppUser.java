@@ -27,6 +27,9 @@ public class AppUser {
     @Column(nullable = false)
     private Role role;
 
+    @Column(unique = true)
+    private String email;
+
     // Уникальный 6-значный номер. Заполняется только для студентов (для остальных — null).
     @Column(unique = true)
     private String studentNumber;
@@ -64,6 +67,9 @@ public class AppUser {
 
     public Role getRole() { return role; }
     public void setRole(Role role) { this.role = role; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 
     public String getStudentNumber() { return studentNumber; }
     public void setStudentNumber(String studentNumber) { this.studentNumber = studentNumber; }

@@ -1,0 +1,12 @@
+package com.school.repo;
+
+import com.school.model.AppUser;
+import com.school.model.PasswordResetToken;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+
+public interface PasswordResetTokenRepository extends JpaRepository<PasswordResetToken, Long> {
+    Optional<PasswordResetToken> findByToken(String token);
+    void deleteByUser(AppUser user);
+}
