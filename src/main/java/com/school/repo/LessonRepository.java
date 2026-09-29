@@ -21,6 +21,8 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
     List<Lesson> findBySchoolClassAndDateBetweenOrderByDateAscStartTimeAsc(
             SchoolClass schoolClass, LocalDate from, LocalDate to);
 
+    List<Lesson> findByDateBetween(LocalDate from, LocalDate to);
+
     List<Lesson> findByTeacherAndDateOrderByStartTime(AppUser teacher, LocalDate date);
 
     List<Lesson> findByTeacherAndDateBetweenOrderByDateAscStartTimeAsc(

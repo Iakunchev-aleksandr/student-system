@@ -13,6 +13,7 @@ import java.util.Optional;
 public interface GradeRepository extends JpaRepository<Grade, Long> {
     Optional<Grade> findByStudentAndLesson(AppUser student, Lesson lesson);
     List<Grade> findByLesson(Lesson lesson);
+    boolean existsByLesson(Lesson lesson);
     List<Grade> findByStudent(AppUser student);
     List<Grade> findByStudentAndLesson_Date(AppUser student, LocalDate date);
 

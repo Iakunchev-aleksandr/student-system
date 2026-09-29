@@ -5,7 +5,9 @@ import com.school.model.Holiday;
 import com.school.model.Lesson;
 import com.school.model.ScheduleTemplate;
 import com.school.model.SchoolClass;
+import com.school.repo.AttendanceRepository;
 import com.school.repo.DayOverrideRepository;
+import com.school.repo.GradeRepository;
 import com.school.repo.HolidayRepository;
 import com.school.repo.LessonRepository;
 import com.school.repo.ScheduleTemplateRepository;
@@ -23,13 +25,71 @@ public class ScheduleGenerationService {
     private final LessonRepository lessons;
     private final HolidayRepository holidays;
     private final DayOverrideRepository dayOverrides;
+    private final GradeRepository grades;
+    private final AttendanceRepository attendance;
 
     public ScheduleGenerationService(ScheduleTemplateRepository templates, LessonRepository lessons,
-                                     HolidayRepository holidays, DayOverrideRepository dayOverrides) {
+                                     HolidayRepository holidays, DayOverrideRepository dayOverrides,
+                                     GradeRepository grades, AttendanceRepository attendance) {
         this.templates = templates;
         this.lessons = lessons;
         this.holidays = holidays;
         this.dayOverrides = dayOverrides;
+        this.grades = grades;
+        this.attendance = attendance;
+    }
+
+    // Итог пересборки расписания: добавлено новых, удалено лишних, оставлено с оценками.
+    public record ResyncResult(int added, int removed, int kept) {}
+
+    // Пересобирает уроки в диапазоне под текущие шаблоны/семестры/каникулы/замены:
+    // добавляет недостающие и удаляет лишние — но уроки с оценками/посещаемостью не трогает.
+    @Transactional
+    public ResyncResult resync(LocalDate from, LocalDate to) {
+        int added = generate(from, to);
+        List<ScheduleTemplate> allTemplates = templates.findAll();
+        List<Holiday> allHolidays = holidays.findAll();
+        List<DayOverride> allOverrides = dayOverrides.findAll();
+        int removed = 0, kept = 0;
+        for (Lesson l : lessons.findByDateBetween(from, to)) {
+            if (isExpected(l, allTemplates, allHolidays, allOverrides)) {
+                continue;
+            }
+            if (grades.existsByLesson(l) || attendance.existsByLesson(l)) {
+                kept++;
+            } else {
+                lessons.delete(l);
+                removed++;
+            }
+        }
+        return new ResyncResult(added, removed, kept);
+    }
+
+    // Соответствует ли урок какому-либо действующему шаблону на его дату.
+    private boolean isExpected(Lesson l, List<ScheduleTemplate> allTemplates,
+                               List<Holiday> allHolidays, List<DayOverride> allOverrides) {
+        SchoolClass clazz = l.getSchoolClass();
+        LocalDate date = l.getDate();
+        if (isHoliday(clazz, date, allHolidays)) {
+            return false;
+        }
+        DayOfWeek eff = effectiveDayOfWeek(clazz, date, allOverrides);
+        for (ScheduleTemplate t : allTemplates) {
+            if (!t.getSchoolClass().getId().equals(clazz.getId())) {
+                continue;
+            }
+            if (t.getTerm() != null && !t.getTerm().covers(date)) {
+                continue;
+            }
+            if (t.getDayOfWeek() != eff) {
+                continue;
+            }
+            if (t.getStartTime().equals(l.getStartTime())
+                    && t.getSubject().getId().equals(l.getSubject().getId())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // Разворачивает недельные шаблоны в конкретные уроки на отрезке [from, to].

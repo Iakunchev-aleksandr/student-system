@@ -13,6 +13,7 @@ import java.util.Optional;
 public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
     Optional<Attendance> findByStudentAndLesson(AppUser student, Lesson lesson);
     List<Attendance> findByLesson(Lesson lesson);
+    boolean existsByLesson(Lesson lesson);
     List<Attendance> findByStudent(AppUser student);
     List<Attendance> findByLesson_SchoolClassAndLesson_DateBetween(
             SchoolClass schoolClass, LocalDate from, LocalDate to);

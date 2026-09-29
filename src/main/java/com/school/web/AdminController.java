@@ -408,11 +408,20 @@ public class AdminController {
             ra.addFlashAttribute("error", messages.get("flash.checkNameDates"));
             return "redirect:/admin/terms";
         }
+        LocalDate oldStart = t.getStartDate();
+        LocalDate oldEnd = t.getEndDate();
         t.setName(name.trim());
         t.setStartDate(startDate);
         t.setEndDate(endDate);
         terms.save(t);
-        ra.addFlashAttribute("message", messages.get("flash.saved"));
+
+        // Даты семестра изменились — пересобираем расписание в затронутом периоде
+        // (объединение старого и нового диапазонов). Уроки с оценками не трогаем.
+        LocalDate from = oldStart.isBefore(startDate) ? oldStart : startDate;
+        LocalDate to = oldEnd.isAfter(endDate) ? oldEnd : endDate;
+        ScheduleGenerationService.ResyncResult r = scheduleGen.resync(from, to);
+        ra.addFlashAttribute("message",
+                messages.get("flash.termResynced", r.added(), r.removed(), r.kept()));
         return "redirect:/admin/terms";
     }
 
